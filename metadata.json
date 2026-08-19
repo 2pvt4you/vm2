@@ -1,0 +1,8 @@
+{
+  "name": "Varaha Metaliks",
+  "description": "Varaha Metaliks Pvt. Ltd. manufactures premier industrial cast iron fittings, ductile iron solutions, and customizable manhole covers. Trusted engineering for global infrastructure.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

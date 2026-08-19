@@ -1,0 +1,13 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# Local source originals (app uses copies under src/assets)
+/grok-image-*.jpg
+/grok-video-*.mp4
