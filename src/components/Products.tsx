@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import MercuryViewer from './3d/MercuryViewer';
 import SEMISB from '../assets/images/Minimalist Simple Business imvoice (1).png';
-import MOULDINGFLOOR from '../assets/images/mouldingfloor.jpg';
+import MOULDINGFLOOR from '../assets/images/mouldingfloor.png';
 import ENDCAPIMAGE from '../assets/images/Minimalist Simple Business imvoice (1).png';
 export interface ProductItem {
   id: string;
@@ -300,138 +300,230 @@ export default function Products() {
           }}
         />
 
-        {/* ================= REFINED UPPER HORIZONTAL CATALOGUE BAR ================= */}
-        <div className="w-full bg-white/95 backdrop-blur-md border-b border-slate-200 py-2.5 px-4 sm:px-8 relative shrink-0 z-30 shadow-xs">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <span className="text-[11px] font-mono font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                <Move3d className="w-3.5 h-3.5 text-amber-600" />
-                <span>3D PRODUCT CATALOGUE</span>
-              </span>
-              <span className="text-slate-300">•</span>
-              <span className="text-xs font-bold text-slate-700 truncate max-w-[200px] sm:max-w-xs">
-                {activeProduct.name}
-              </span>
-              {activeProduct.is3D && (
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-mono text-[10px] font-bold border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  3D VIEW READY
-                </span>
-              )}
-            </div>
+        S{/* ================= PREMIUM PRODUCT SLIDER ================= */}
+        <div className="relative w-full shrink-0 z-30 px-3 sm:px-6 lg:px-8 py-3">
 
-            {/* High-Contrast Carousel Arrow Controls */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleScrollNavLeft}
-                className="w-8 h-8 rounded-lg bg-slate-900 text-white hover:bg-amber-500 hover:text-slate-950 flex items-center justify-center cursor-pointer transition-all shadow-xs active:scale-95 border border-slate-800"
-                title="Scroll Range Left"
-                aria-label="Previous Products"
-              >
-                <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
-              </button>
-              <button
-                onClick={handleScrollNavRight}
-                className="w-8 h-8 rounded-lg bg-slate-900 text-white hover:bg-amber-500 hover:text-slate-950 flex items-center justify-center cursor-pointer transition-all shadow-xs active:scale-95 border border-slate-800"
-                title="Scroll Range Right"
-                aria-label="Next Products"
-              >
-                <ChevronRight className="w-5 h-5 stroke-[2.5]" />
-              </button>
-            </div>
-          </div>
+          {/* Glass rail */}
+          <div className="relative rounded-2xl overflow-hidden border border-white/30 bg-slate-950/55 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.22)]">
 
-          {/* Horizontal Product Range Scroller */}
-          <div
-            ref={upperNavScrollerRef}
-            className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-0.5 scroll-smooth"
-          >
-            {ALL_PRODUCTS.map((prod, idx) => {
-              const isActive = activeIndex === idx;
-              const IconComp = prod.icon;
-              return (
-                <button
-                  key={prod.id}
-                  ref={(el) => {
-                    navCardRefs.current[idx] = el;
-                  }}
-                  onClick={() => handleSwitchProduct(idx)}
-                  className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl border text-left shrink-0 transition-all cursor-pointer min-w-[190px] sm:min-w-[220px] relative ${
-                    isActive
-                      ? 'bg-slate-950 border-amber-500 text-white shadow-md ring-1 ring-amber-500/50'
-                      : 'bg-slate-50/90 hover:bg-slate-100 border-slate-200 text-slate-800'
-                  }`}
-                >
-                  <div
-                    className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
-                      isActive ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white text-slate-600 border border-slate-200'
-                    }`}
+            {/* Subtle golden atmosphere */}
+            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_-80%,rgba(212,165,72,0.20),transparent_55%)]" />
+
+            {/* Navigation controls */}
+            <button
+              onClick={handleScrollNavLeft}
+              className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20
+                        w-9 h-9 sm:w-10 sm:h-10 rounded-full
+                        bg-slate-950/70 backdrop-blur-md
+                        border border-white/20
+                        text-white
+                        flex items-center justify-center
+                        hover:border-amber-400/70
+                        hover:text-amber-300
+                        hover:bg-slate-900/90
+                        transition-all duration-300
+                        active:scale-90
+                        shadow-lg"
+              title="Previous Products"
+              aria-label="Previous Products"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={handleScrollNavRight}
+              className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20
+                        w-9 h-9 sm:w-10 sm:h-10 rounded-full
+                        bg-slate-950/70 backdrop-blur-md
+                        border border-white/20
+                        text-white
+                        flex items-center justify-center
+                        hover:border-amber-400/70
+                        hover:text-amber-300
+                        hover:bg-slate-900/90
+                        transition-all duration-300
+                        active:scale-90
+                        shadow-lg"
+              title="Next Products"
+              aria-label="Next Products"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            {/* Product slider */}
+            <div
+              ref={upperNavScrollerRef}
+              className="
+                relative flex items-stretch gap-2.5 sm:gap-3
+                overflow-x-auto scroll-smooth
+                px-12 sm:px-16 py-2.5
+                [scrollbar-width:thin]
+                [scrollbar-color:rgba(201,150,50,0.8)_transparent]
+              "
+              style={{
+                scrollbarWidth: 'thin',
+              }}
+            >
+
+              {ALL_PRODUCTS.map((prod, idx) => {
+                const isActive = activeIndex === idx;
+
+                return (
+                  <button
+                    key={prod.id}
+                    ref={(el) => {
+                      navCardRefs.current[idx] = el;
+                    }}
+                    onClick={() => handleSwitchProduct(idx)}
+                    className={`
+                      group relative shrink-0
+                      w-[185px] sm:w-[215px] lg:w-[225px]
+                      min-h-[72px] sm:min-h-[78px]
+                      rounded-xl
+                      px-4 py-3
+                      text-left
+                      overflow-hidden
+                      transition-all duration-300
+                      cursor-pointer
+                      border
+                      ${
+                        isActive
+                          ? `
+                            bg-gradient-to-br
+                            from-amber-300/25
+                            via-amber-500/10
+                            to-slate-950/50
+                            border-amber-400/80
+                            shadow-[0_0_25px_rgba(201,150,50,0.18)]
+                          `
+                          : `
+                            bg-white/[0.07]
+                            border-white/[0.12]
+                            hover:bg-white/[0.12]
+                            hover:border-amber-300/40
+                          `
+                      }
+                    `}
                   >
-                    <IconComp className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className={`text-xs font-bold truncate leading-tight ${
-                        isActive ? 'text-white' : 'text-slate-900'
-                      }`}
-                    >
-                      {prod.name}
-                    </div>
-                    <div
-                      className={`text-[9px] font-mono uppercase tracking-wider truncate mt-0.5 flex items-center gap-1.5 ${
-                        isActive ? 'text-amber-400' : 'text-slate-400'
-                      }`}
-                    >
-                      <span>{prod.category}</span>
-                      {prod.is3D && (
-                        <span className={`px-1 py-0.2 rounded text-[8px] font-bold ${
-                          isActive ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-200 text-slate-700'
-                        }`}>
-                          3D
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {isActive && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
-        {/* ================= MAIN HERO VIEWPORT (CLEAN, PROMINENT 3D HERO) ================= */}
-        <div className="relative w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden">
-          
-          {/* Transparent 3D Stage or High-Res Image Fallback */}
-          {activeProduct.is3D && activeProduct.modelUrl ? (
-            <MercuryViewer
-              modelUrl={activeProduct.modelUrl}
-              productName={activeProduct.name}
-              className="w-full h-full"
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center p-6 relative">
-              <div className="relative max-w-lg w-full h-[55vh] rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-slate-50 flex items-center justify-center">
-                <img
-                  src={activeProduct.imageUrl}
-                  alt={activeProduct.name}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-5 text-white">
-                  <span className="text-amber-400 font-mono text-[10px] font-bold uppercase tracking-wider">
-                    {activeProduct.category}
-                  </span>
-                  <h3 className="text-xl font-bold font-display">{activeProduct.name}</h3>
+                    {/* Active golden glow */}
+                    {isActive && (
+                      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_15%_20%,rgba(255,210,100,0.22),transparent_55%)]" />
+                    )}
+
+                    {/* Gold active line */}
+                    <div
+                      className={`
+                        absolute left-0 top-0 bottom-0 w-[2px]
+                        transition-all duration-300
+                        ${isActive ? 'bg-amber-400' : 'bg-transparent group-hover:bg-amber-400/40'}
+                      `}
+                    />
+
+                    {/* Product information */}
+                    <div className="relative z-10 flex flex-col justify-center h-full">
+
+                      <span
+                        className={`
+                          text-[12px] sm:text-[13px]
+                          font-bold
+                          uppercase
+                          tracking-wide
+                          leading-snug
+                          line-clamp-2
+                          transition-colors duration-300
+                          ${
+                            isActive
+                              ? 'text-white'
+                              : 'text-white/85 group-hover:text-white'
+                          }
+                        `}
+                      >
+                        {prod.name}
+                      </span>
+
+                      <span
+                        className={`
+                          mt-1
+                          text-[9px] sm:text-[10px]
+                          font-mono
+                          uppercase
+                          tracking-[0.14em]
+                          truncate
+                          transition-colors duration-300
+                          ${
+                            isActive
+                              ? 'text-amber-300'
+                              : 'text-white/40 group-hover:text-amber-200/70'
+                          }
+                        `}
+                      >
+                        {prod.category}
+                      </span>
+
+                    </div>
+
+                    {/* Active indicator */}
+                    {isActive && (
+                      <span className="
+                        absolute right-3 bottom-3
+                        w-1.5 h-1.5
+                        rounded-full
+                        bg-amber-300
+                        shadow-[0_0_8px_rgba(252,211,77,0.9)]
+                      " />
+                    )}
+
+                  </button>
+                );
+              })}
+
+            </div>
+
+            {/* Elegant slider progress line */}
+            <div className="mx-12 sm:mx-16 mb-1 h-px bg-white/[0.08] relative overflow-hidden rounded-full">
+              <div className="absolute left-0 top-0 h-full w-1/4 bg-gradient-to-r from-transparent via-amber-400/80 to-transparent" />
+            </div>
+
+          </div>
+
+                    {/* ================= MAIN HERO VIEWPORT (CLEAN, PROMINENT 3D HERO) ================= */}
+          <div className="relative w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+
+            {/* Transparent 3D Stage or High-Res Image Fallback */}
+            {activeProduct.is3D && activeProduct.modelUrl ? (
+              <MercuryViewer
+                modelUrl={activeProduct.modelUrl}
+                productName={activeProduct.name}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center p-6 relative">
+                <div className="relative max-w-lg w-full h-[55vh] rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-slate-50 flex items-center justify-center">
+                  <img
+                    src={activeProduct.imageUrl}
+                    alt={activeProduct.name}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-5 text-white">
+                    <span className="text-amber-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+                      {activeProduct.category}
+                    </span>
+
+                    <h3 className="text-xl font-bold font-display">
+                      {activeProduct.name}
+                    </h3>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+
+          </div>
 
           {/* ================= COMPACT SPECIFICATIONS TRIGGER & EXPANDABLE CARD ================= */}
-          <div className="absolute top-4 left-4 sm:top-5 sm:left-6 z-20 pointer-events-auto">
+          <div className="absolute top-4 left-4 sm:top-5 sm:left-6 z-20 ...">
             {isSpecsOpen ? (
               <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-2xl p-4 sm:p-5 text-slate-900 w-[calc(100vw-2rem)] max-w-sm sm:max-w-md animate-in fade-in zoom-in-95 duration-200">
                 {/* Header */}
@@ -573,22 +665,77 @@ export default function Products() {
 
         </div>
 
-        {/* ================= SLIM FULL-WIDTH BOTTOM BAR: DOWNLOAD CORPORATE BROCHURE ================= */}
-        <a
-          href="/assets/Varaha_Metaliks_Brochure.pdf"
-          download="Varaha_Metaliks_Brochure.pdf"
-          className="w-full bg-slate-950 hover:bg-slate-900 text-white h-12 sm:h-13 px-4 flex items-center justify-center gap-2.5 transition-colors cursor-pointer border-t border-slate-800 shrink-0 group z-30"
-        >
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-          </div>
-          <span className="text-xs sm:text-sm font-mono font-bold tracking-wider uppercase group-hover:text-amber-400 transition-colors truncate">
-            DOWNLOAD OUR CORPORATE BROCHURE
-          </span>
-          <FileDown className="w-4 h-4 text-amber-400 group-hover:translate-y-0.5 transition-transform shrink-0" />
-        </a>
+                {/* ================= FIXED HERO BOTTOM ACTIONS ================= */}
+        <div className="absolute left-0 right-0 bottom-0 z-40">
+
+          {/* Specifications trigger */}
+          {!isSpecsOpen && (
+            <div className="flex justify-center pb-2 sm:pb-3">
+              <button
+                onClick={() => setIsSpecsOpen(true)}
+                className="
+                  group inline-flex items-center gap-2
+                  px-4 py-2
+                  rounded-full
+                  bg-white/80 backdrop-blur-xl
+                  border border-white/70
+                  shadow-[0_8px_30px_rgba(0,0,0,0.18)]
+                  text-slate-800
+                  hover:bg-white
+                  hover:border-amber-400/70
+                  hover:text-slate-950
+                  transition-all duration-300
+                  cursor-pointer
+                "
+                title="View Technical Specifications"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 text-amber-600 transition-transform group-hover:rotate-6" />
+
+                <span className="text-xs sm:text-sm font-semibold tracking-tight">
+                  Click to view specifications
+                </span>
+
+                <span className="text-[10px] text-slate-400 group-hover:text-amber-600 transition-colors">
+                  ↑
+                </span>
+              </button>
+            </div>
+          )}
+
+          {/* Corporate brochure */}
+          <a
+            href="/assets/Varaha_Metaliks_Brochure.pdf"
+            download="Varaha_Metaliks_Brochure.pdf"
+            className="
+              w-full
+              h-12 sm:h-13
+              px-4
+              flex items-center justify-center gap-2.5
+              bg-slate-950/95
+              backdrop-blur-xl
+              border-t border-amber-500/20
+              text-white
+              hover:bg-slate-900
+              transition-all duration-300
+              cursor-pointer
+              group
+            "
+          >
+            <FileDown className="w-4 h-4 text-amber-400 group-hover:translate-y-0.5 transition-transform" />
+
+            <span className="
+              text-xs sm:text-sm
+              font-mono font-bold
+              tracking-[0.16em]
+              uppercase
+              group-hover:text-amber-400
+              transition-colors
+            ">
+              DOWNLOAD OUR CORPORATE BROCHURE
+            </span>
+          </a>
+
+        </div>
 
       </div>
 
