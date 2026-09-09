@@ -7,7 +7,22 @@ interface NavbarProps {
   isAnimationFinished?: boolean;
 }
 
-export default function Navbar({ activeTab = 'home', setActiveTab, isAnimationFinished = false }: NavbarProps) {
+/**
+ * Navigation as part of the film.
+ *
+ * The old treatment was a full-width white application pill that sat on top of
+ * the cinematic plate and competed with every section title. This version keeps
+ * every link and handler identical but:
+ *   - rides on dark glass so it belongs to the industrial environment
+ *   - stays compact (48/56px) and narrow, so it never reads as a toolbar
+ *   - thins out further once the visitor is deep in the film
+ *   - closes the mobile sheet on scroll so it cannot cover product content
+ */
+export default function Navbar({
+  activeTab = 'home',
+  setActiveTab,
+  isAnimationFinished = false,
+}: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrolledPastProducts, setScrolledPastProducts] = useState(false);
@@ -38,41 +53,56 @@ export default function Navbar({ activeTab = 'home', setActiveTab, isAnimationFi
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // An open mobile sheet must never travel over product/section content.
+  useEffect(() => {
+    if (!isOpen) return;
+    const close = () => setIsOpen(false);
+    window.addEventListener('scroll', close, { passive: true });
+    return () => window.removeEventListener('scroll', close);
+  }, [isOpen]);
+
   // When on standalone products tab, do not show the global navbar
   if (activeTab === 'products') {
     return null;
   }
 
   // Show navbar once hero cinematic sequence completes or on non-home tabs
-  const showNavbar = activeTab !== 'home' ? true : (isAnimationFinished || scrolledPastProducts);
+  const showNavbar =
+    activeTab !== 'home' ? true : isAnimationFinished || scrolledPastProducts;
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 px-3 sm:px-4 pt-3 sm:pt-4 transition-all duration-700 ease-out transform ${
-        showNavbar 
-          ? 'translate-y-0 opacity-100 pointer-events-auto' 
-          : '-translate-y-12 opacity-0 pointer-events-none'
+    <header
+      className={`fixed top-0 right-0 left-0 z-50 px-3 pt-2.5 transition-all duration-700 ease-out sm:px-4 sm:pt-3.5 ${
+        showNavbar
+          ? 'translate-y-0 opacity-100'
+          : 'pointer-events-none -translate-y-10 opacity-0'
       }`}
     >
       <nav
-        className={`max-w-6xl mx-auto rounded-[50px] border transition-all duration-300 backdrop-blur-md ${
-          scrolled
-            ? 'bg-slate-50/90 border-blue-200/70 shadow-[0_12px_40px_-10px_rgba(30,64,175,0.22)]'
-            : 'bg-slate-50/80 border-blue-100/80 shadow-[0_8px_28px_-8px_rgba(30,58,138,0.16)]'
+        className={`mx-auto max-w-5xl rounded-full border transition-all duration-500 ${
+          scrolled ? 'vm-nav-dark' : 'vm-nav-clear'
         }`}
+        style={{
+          boxShadow: scrolled
+            ? '0 18px 50px -22px rgba(0,0,0,0.85)'
+            : '0 10px 34px -20px rgba(0,0,0,0.6)',
+        }}
       >
-        <div className="flex items-center justify-between h-14 sm:h-16 px-5 sm:px-7">
-          <a href="#" className="font-display text-lg sm:text-xl font-black tracking-tight uppercase text-blue-950 shrink-0">
-            VARAHA <span className="text-blue-700">METALIKS</span>
+        <div className="flex h-12 items-center justify-between px-4 sm:h-14 sm:px-6">
+          <a
+            href="#"
+            className="font-display shrink-0 text-[13px] font-semibold tracking-[0.16em] text-white uppercase sm:text-sm"
+          >
+            VARAHA <span className="text-vm-amber">METALIKS</span>
           </a>
 
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden items-center gap-0.5 md:flex">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
                 onClick={() => setActiveTab?.(link.id)}
-                className="px-3.5 py-2 text-sm font-medium text-slate-600 hover:text-blue-900 rounded-full hover:bg-blue-50/80 transition-all"
+                className="rounded-full px-3 py-1.5 font-mono text-[10px] tracking-[0.16em] text-white/60 uppercase transition-colors duration-300 hover:bg-white/[0.06] hover:text-white"
               >
                 {link.name}
               </a>
@@ -80,26 +110,26 @@ export default function Navbar({ activeTab = 'home', setActiveTab, isAnimationFi
             <a
               href="#contact"
               onClick={() => setActiveTab?.('contact')}
-              className="ml-2 bg-gradient-to-r from-blue-700 to-blue-900 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-lg shadow-blue-900/20 hover:from-blue-600 hover:to-blue-800 transition-all"
+              className="border-vm-amber/40 text-vm-amber hover:bg-vm-amber/10 hover:border-vm-amber/70 ml-2 rounded-full border px-4 py-1.5 font-mono text-[10px] tracking-[0.16em] uppercase transition-colors duration-300"
             >
-              Inquire Now
+              Inquire
             </a>
           </div>
 
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden flex items-center justify-center w-10 h-10 rounded-full text-blue-900 hover:bg-blue-50 transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/[0.08] hover:text-white md:hidden"
             aria-label={isOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={isOpen}
           >
-            {isOpen ? <X size={22} /> : <Menu size={22} />}
+            {isOpen ? <X size={19} /> : <Menu size={19} />}
           </button>
         </div>
 
         {isOpen && (
-          <div className="md:hidden px-4 pb-4 pt-1 border-t border-blue-100/80">
-            <div className="flex flex-col gap-1 pt-2">
+          <div className="border-t border-white/[0.08] px-3 pt-1 pb-3 md:hidden">
+            <div className="flex flex-col gap-0.5 pt-1.5">
               {navLinks.map((link) => (
                 <a
                   key={link.name}
@@ -108,7 +138,7 @@ export default function Navbar({ activeTab = 'home', setActiveTab, isAnimationFi
                     setIsOpen(false);
                     setActiveTab?.(link.id);
                   }}
-                  className="block px-4 py-2.5 text-base font-medium text-slate-700 hover:text-blue-900 hover:bg-blue-50 rounded-full transition-colors"
+                  className="tap-target flex items-center rounded-full px-4 font-mono text-[11px] tracking-[0.18em] text-white/70 uppercase transition-colors hover:bg-white/[0.06] hover:text-white"
                 >
                   {link.name}
                 </a>
@@ -119,9 +149,9 @@ export default function Navbar({ activeTab = 'home', setActiveTab, isAnimationFi
                   setIsOpen(false);
                   setActiveTab?.('contact');
                 }}
-                className="mt-2 text-center bg-gradient-to-r from-blue-700 to-blue-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow-lg shadow-blue-900/20"
+                className="tap-target border-vm-amber/40 text-vm-amber mt-1.5 flex items-center justify-center rounded-full border font-mono text-[11px] tracking-[0.18em] uppercase"
               >
-                Inquire Now
+                Inquire
               </a>
             </div>
           </div>

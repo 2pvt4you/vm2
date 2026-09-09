@@ -94,6 +94,7 @@ function Reveal({
   tone = '#061b57',
   ghost = 0.26,
   glow = true,
+  blend = true,
 }: {
   children: React.ReactNode;
   reveal: number;
@@ -101,26 +102,35 @@ function Reveal({
   tone?: string;
   ghost?: number;
   glow?: boolean;
+  /** Multiply the letterforms into the plate instead of stacking them on top. */
+  blend?: boolean;
 }) {
   const pct = clamp01(reveal) * 100;
 
   return (
     <span className={`relative inline-block ${className}`}>
       {/* Ghost — always faintly present */}
-      <span aria-hidden className="block" style={{ color: `rgba(6,27,87,${ghost})` }}>
+      <span
+        aria-hidden
+        className={`block ${blend ? 'vm-type-in-scene' : ''}`}
+        style={{ color: `rgba(6,27,87,${ghost})` }}
+      >
         {children}
       </span>
 
-      {/* Wipe — the active, fully-saturated layer */}
+      {/* Wipe — the active, fully-saturated layer.
+          No white halo: a white glow is what made the type read as a sticker
+          sitting above the factory. Instead the letterforms multiply into the
+          plate and carry only a soft industrial shadow for legibility. */}
       <span
         aria-hidden
-        className="absolute inset-0 block"
+        className={`absolute inset-0 block ${blend ? 'vm-type-in-scene' : ''}`}
         style={{
           color: tone,
           clipPath: `inset(0 ${100 - pct}% 0 0)`,
           willChange: 'clip-path',
           textShadow: glow
-            ? '0 2px 12px rgba(255,255,255,0.42), 0 6px 26px rgba(3,21,80,0.22)'
+            ? '0 1px 0 rgba(255,255,255,0.14), 0 12px 34px rgba(3,21,80,0.28)'
             : undefined,
         }}
       >
@@ -164,6 +174,16 @@ function Statement({
   // A touch of vertical settle on entry keeps it from feeling like a slider.
   const settleY = (1 - easeOut(clamp01(phase.travel / 0.24))) * (isMobile ? 14 : 22);
 
+  // FOCUS PULL — the statement is slightly out of focus as it enters and
+  // leaves, and resolves sharp while it holds. This is what makes the type
+  // read as something the camera is focusing on inside the scene rather than
+  // a caption composited over it.
+  const focusBlur = (1 - clamp01(phase.opacity)) * (isMobile ? 2.2 : 3.4);
+
+  // CAMERA PUSH — a shallow depth change across the arc, so the block travels
+  // through the environment instead of sliding across its surface.
+  const depthScale = 1.035 - easeInOut(phase.travel) * 0.05;
+
   return (
     <div
       className="absolute inset-x-0 z-30"
@@ -171,8 +191,9 @@ function Statement({
         top,
         opacity: phase.opacity,
         visibility: phase.active ? 'visible' : 'hidden',
-        transform: `translate3d(${travelX}vw, ${settleY}px, 0)`,
-        willChange: 'transform, opacity',
+        transform: `translate3d(${travelX}vw, ${settleY}px, 0) scale(${depthScale})`,
+        filter: focusBlur > 0.05 ? `blur(${focusBlur.toFixed(2)}px)` : undefined,
+        willChange: 'transform, opacity, filter',
       }}
     >
       <div className="mx-auto w-full max-w-[1240px] px-5 sm:px-8 lg:px-12">{children}</div>
@@ -227,22 +248,33 @@ export default function ScrollToBeginHeader({ scrollProgress }: ScrollToBeginHea
   return (
     <div className="pointer-events-none absolute inset-0 z-30 select-none overflow-hidden">
       {/* ==================================================================
-          READABILITY LAYER
-          A soft sky-side wash only. The factory stays fully visible; this
-          exists purely so type sitting on bright cloud remains legible.
+          READABILITY LAYER — LOCALISED, NOT A FULL-FRAME WASH
+          The previous version laid a white gradient across the entire plate,
+          which flattened the factory and made every statement feel like it
+          was printed on a sheet in front of the scene. Now the lift only
+          exists where the type actually sits, it breathes with the statement
+          arc, and the factory keeps its own contrast everywhere else.
           ================================================================== */}
+      <div
+        className="vm-scrim-type absolute inset-0 z-0"
+        style={{
+          opacity: 0.30 + atmosphere * 0.34,
+          transition: 'opacity 120ms linear',
+        }}
+      />
+
+      {/* Base grade only — seats the frame top and bottom and hands the
+          closing tone to the section below. Deliberately very light. */}
       <div
         className="absolute inset-0 z-0"
         style={{
-          opacity: 0.34 + atmosphere * 0.18,
           background: `
             linear-gradient(
               180deg,
-              rgba(244,246,250,0.62) 0%,
-              rgba(244,246,250,0.28) 26%,
-              rgba(244,246,250,0.00) 52%,
-              rgba(5,7,12,0.00) 74%,
-              rgba(5,7,12,0.22) 100%
+              rgba(244,246,250,0.20) 0%,
+              rgba(244,246,250,0.00) 30%,
+              rgba(5,7,12,0.00) 68%,
+              rgba(5,7,12,0.34) 100%
             )
           `,
         }}
@@ -252,7 +284,7 @@ export default function ScrollToBeginHeader({ scrollProgress }: ScrollToBeginHea
           1. INTRO COVER
           ================================================================== */}
       <div
-        className="pointer-events-auto absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/60 p-6 text-center backdrop-blur-[2px] sm:p-10"
+        className="pointer-events-auto absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/35 p-6 text-center backdrop-blur-[1px] sm:p-10"
         style={{
           opacity: introOpacity,
           visibility: introOpacity > 0.001 ? 'visible' : 'hidden',
@@ -310,21 +342,28 @@ export default function ScrollToBeginHeader({ scrollProgress }: ScrollToBeginHea
           className="leading-[0.92] tracking-[-0.035em]"
           style={{ fontFamily: "'Fraunces', ui-serif, Georgia, serif" }}
         >
-          <Reveal
-            reveal={r(s1.reveal)}
-            ghost={0.3}
-            className="block font-medium text-[clamp(2rem,9vw,6.5rem)]"
-          >
-            Mittal, Jhunjhunwala
-          </Reveal>
+          {/* The line break lives on the wrapper: Reveal itself must stay
+              inline-block so its wipe clip-path measures the text, not the
+              full column width. */}
+          <span className="block">
+            <Reveal
+              reveal={r(s1.reveal)}
+              ghost={0.3}
+              className="font-medium text-[clamp(2rem,9vw,6.5rem)]"
+            >
+              Mittal, Jhunjhunwala
+            </Reveal>
+          </span>
 
-          <Reveal
-            reveal={r(clamp01((s1.reveal - 0.12) / 0.88))}
-            ghost={0.24}
-            className="block font-normal italic text-[clamp(2rem,9vw,6.5rem)]"
-          >
-            &amp; Jaju
-          </Reveal>
+          <span className="block">
+            <Reveal
+              reveal={r(clamp01((s1.reveal - 0.12) / 0.88))}
+              ghost={0.24}
+              className="font-normal italic text-[clamp(2rem,9vw,6.5rem)]"
+            >
+              &amp; Jaju
+            </Reveal>
+          </span>
         </h2>
 
         <div className="mt-4 flex items-center gap-3 sm:mt-6">

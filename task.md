@@ -61,6 +61,70 @@ Checks: `bun run lint` (tsc --noEmit), `bun run build` (vite build)
       PMREM texture leak, non-functional Retry button, mobile OrbitControls disabled,
       ns.tsx deletion
 
+## Stage 1 refinement — "one continuous film" pass (after user review of 41029fa)
+
+User feedback on 41029fa: hero type sat ON the factory not IN it; ProductBridge
+reveal felt inserted/card-like; Products read as a dashboard; navbar too dominant;
+some sections still felt like separate blocks. Agreed staged delivery — flagship
+scenes first (hero + bridge + products + navbar + continuity), then extend the
+SAME language to the remaining sections in Stage 2.
+
+- [x] `src/index.css` — new CINEMATIC SCENE SYSTEM block, inserted BEFORE the
+      reduced-motion block (order matters or the `*` override kills it):
+      `.vm-scrim-type` (localised radial readability scrim), `.vm-type-in-scene`
+      (mix-blend-mode: multiply + @supports fallback), `.vm-rule` (hairline
+      divider that replaces card borders), `.vm-nav-dark` / `.vm-nav-clear`,
+      `.vm-pedestal` + breathe keyframes
+- [x] `Navbar.tsx` — compact contextual glass (h-12/14, max-w-5xl), clear at top
+      -> dark once scrolled, mono uppercase links, amber outline Inquire.
+      Preserved: all links, activeTab gating, products -> return null, reveal gate.
+      Added: mobile sheet closes on scroll so it can't travel over content.
+- [x] `ScrollToBeginHeader.tsx` — type now belongs to the plate:
+      removed the full-frame white wash (was 0.34-0.52) -> `.vm-scrim-type`;
+      removed the white halo textShadow (the "sticker" cause) -> multiply blend;
+      added per-statement focus pull (blur on approach/exit) + camera push
+      (depthScale 1.035 -> 0.985); intro cover 60% -> 35% white.
+- [x] FIXED headline collision: `Reveal`'s root hardcodes `relative inline-block`,
+      so a caller's `block` lost at equal CSS specificity and "Mittal, Jhunjhunwala"
+      + "& Jaju" rendered on ONE line, overlapping. Fix = line break moved to a
+      wrapper `<span className="block">`; Reveal MUST stay inline-block because its
+      wipe clip-path percentage measures the root's width, not the text.
+- [x] `ProductBridge.tsx` — foundry -> product is now one material transformation:
+      mask-based emergence (productMask 118% -> -14%) instead of an opacity fade,
+      removed the `bg-vm-amber/12 blur-[120px]` halo plate, shared heat wash
+      carried from the pour, camera turn toward the next scene, `.vm-rule` settle
+      line. Captions now stack in ONE slot and hand over.
+- [x] FIXED hooks violation: `useMotionTemplate` had been written inside a JSX
+      ternary — hoisted to component top level.
+- [x] FIXED beat overlap: beats are 0.24 apart, so each must be fully out by
+      start+0.15; ranges were start+0.26 and two captions co-existed.
+- [x] FIXED the white card: `...removebg-preview.png` was NEVER actually cut out
+      (alpha channel present but corners opaque white), which is what made the
+      reveal read as a pasted card. Knocked the backing out of the SAME photo ->
+      `finished-fitting-cutout.png`. Photo not substituted.
+- [x] `Products.tsx` — de-chromed from dashboard to showroom: `Panel`, the right
+      `<aside>`, `MobileSpecs`, mobile cards, `ListRow`, `AngleSelector`,
+      `EnquireLink` and the brochure link all lost
+      `rounded-2xl border bg-black/35 backdrop-blur-md` in favour of `.vm-rule`
+      hairlines, left index bars and open type. Model given dominance: stage
+      frame removed, `.vm-pedestal` light added, columns narrowed
+      (300/320 -> 260/280), gap 5 -> 8/10.
+- [x] FIXED showroom overflow: the stage was `min(82vh,820px)`, so section height
+      was 1012px vs a 900px viewport (over by 112-135px at every desktop size)
+      and the foot of the product index was unreachable. Now
+      `clamp(460px, calc(var(--app-vh) - 300px), 780px)` -> fits with ~26px spare.
+- [x] `bun run lint` + `bun run build` clean
+- [x] Re-verified 390/414/844x390/768/1024/1440: 0 console errors, 0 failed
+      requests, 0 horizontal overflow, scrollHeight stable
+- [x] All 16 products cycled on desktop/tablet/mobile: 16/16 distinct, no GLB 4xx
+      (Playwright click timeouts on a few rows are an actionability artifact of
+      the list auto-recentering — hit-testing confirmed no overlay)
+
+### Stage 2 (only after user review — reuse Stage 1 language, invent nothing new)
+About progressive story · documentary gallery · product-exit continuation ·
+Clients ticker refinement · Approvals editorial reveal · dark->warm Contact
+resolve · mobile recomposition
+
 ## Open / low priority
 - Root `mercury.glb` + root `glbmodel/` look unused (served copies live in
   public/glbmodel/). Verify before deleting.

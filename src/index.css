@@ -207,6 +207,78 @@ body {
 }
 
 /* ==========================================================================
+   CINEMATIC SCENE SYSTEM
+   Shared primitives so every scene speaks one motion/material language
+   instead of each section inventing its own treatment.
+   ========================================================================== */
+
+/* Localised readability scrim. Replaces the old full-frame white wash so the
+   factory plate stays fully visible and only the type area is lifted. */
+.vm-scrim-type {
+  background: radial-gradient(
+    112% 86% at 26% 26%,
+    rgba(244, 246, 250, 0.80) 0%,
+    rgba(244, 246, 250, 0.44) 34%,
+    rgba(244, 246, 250, 0.12) 58%,
+    rgba(244, 246, 250, 0) 74%
+  );
+}
+
+/* Type that sits INSIDE the plate: multiply lets the factory's own values
+   show through the letterforms instead of stacking a glowing layer on top. */
+.vm-type-in-scene {
+  mix-blend-mode: multiply;
+}
+
+@supports not (mix-blend-mode: multiply) {
+  .vm-type-in-scene {
+    mix-blend-mode: normal;
+  }
+}
+
+/* Hairline technical rule — used everywhere a card border used to be. */
+.vm-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.18),
+    rgba(255, 255, 255, 0.02)
+  );
+}
+
+/* Contextual navigation glass. Never a white application slab. */
+.vm-nav-dark {
+  background: rgba(7, 10, 17, 0.56);
+  border-color: rgba(255, 255, 255, 0.09);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+.vm-nav-clear {
+  background: rgba(7, 10, 17, 0.26);
+  border-color: rgba(255, 255, 255, 0.13);
+  -webkit-backdrop-filter: blur(20px) saturate(125%);
+  backdrop-filter: blur(20px) saturate(125%);
+}
+
+/* Showroom pedestal light under the 3D product. */
+@keyframes vm-pedestal-breathe {
+  0%,
+  100% {
+    opacity: 0.46;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.68;
+    transform: scale(1.035);
+  }
+}
+
+.vm-pedestal {
+  animation: vm-pedestal-breathe 9s ease-in-out infinite;
+}
+
+/* ==========================================================================
    REDUCED MOTION
    Everything cinematic degrades to a static, readable composition.
    ========================================================================== */

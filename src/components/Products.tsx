@@ -339,7 +339,7 @@ export default function Products() {
           <a
             href={BROCHURE_HREF}
             download="Varaha_Metaliks_Brochure.pdf"
-            className="tap-target group inline-flex items-center gap-2.5 rounded-lg border border-white/12 bg-white/[0.04] px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-white/70 transition-colors hover:border-vm-amber/45 hover:text-white sm:text-[11px]"
+            className="tap-target group inline-flex items-center gap-2.5 border-b border-white/15 font-mono text-[10px] uppercase tracking-[0.18em] text-white/60 transition-colors hover:border-vm-amber/60 hover:text-white sm:text-[11px]"
           >
             <FileDown className="h-3.5 w-3.5 shrink-0 text-vm-amber" />
             <span>Corporate brochure</span>
@@ -359,8 +359,12 @@ export default function Products() {
           >
             <ProductIdentity product={active} compact />
 
-            <div className="relative h-[46vh] min-h-[280px] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
-              {stage}
+            <div className="relative h-[48vh] min-h-[300px] overflow-hidden">
+              <div
+                className="vm-pedestal pointer-events-none absolute inset-x-[14%] bottom-[4%] h-[34%] bg-[radial-gradient(ellipse_50%_50%_at_50%_100%,rgba(212,165,72,0.20),transparent_72%)]"
+                aria-hidden="true"
+              />
+              <div className="relative h-full w-full">{stage}</div>
             </div>
 
             {active.angles && active.angles.length > 0 && (
@@ -393,16 +397,21 @@ export default function Products() {
              The centre column is never overlaid by panel UI.
              ================================================================== */
           <div
-            className={`grid gap-5 ${
+            className={`grid gap-8 xl:gap-10 ${
               isTablet
                 ? 'grid-cols-[minmax(0,1fr)_260px]'
-                : 'grid-cols-[300px_minmax(0,1fr)_320px] xl:grid-cols-[330px_minmax(0,1fr)_350px]'
+                : 'grid-cols-[260px_minmax(0,1fr)_280px] xl:grid-cols-[280px_minmax(0,1fr)_300px]'
             }`}
-            style={{ height: 'min(78vh, 760px)' }}
+            style={{
+              // One contained shot: the stage plus this section's own header
+              // and padding must fit the viewport, otherwise the foot of the
+              // product index can never be reached.
+              height: 'clamp(460px, calc(var(--app-vh) - 300px), 780px)',
+            }}
           >
             {/* ---------------- LEFT ---------------- */}
             {!isTablet && (
-              <aside className="thin-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+              <aside className="thin-scrollbar flex h-full min-h-0 flex-col gap-1 overflow-y-auto pr-3">
                 <Panel>
                   <ProductIdentity product={active} />
                 </Panel>
@@ -438,8 +447,14 @@ export default function Products() {
 
             {/* ---------------- CENTER ---------------- */}
             <div className="relative flex h-full min-h-0 flex-col">
-              <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.015]">
-                {stage}
+              {/* The product owns the frame. No card, no border — only a
+                  breathing pedestal light beneath it. */}
+              <div className="relative min-h-0 flex-1 overflow-hidden">
+                <div
+                  className="vm-pedestal pointer-events-none absolute inset-x-[12%] bottom-[6%] h-[38%] bg-[radial-gradient(ellipse_50%_50%_at_50%_100%,rgba(212,165,72,0.22),transparent_72%)]"
+                  aria-hidden="true"
+                />
+                <div className="relative h-full w-full">{stage}</div>
               </div>
 
               {/* Wordmark sits beneath the model, never across it. */}
@@ -468,8 +483,8 @@ export default function Products() {
             </div>
 
             {/* ---------------- RIGHT ---------------- */}
-            <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/35 backdrop-blur-md">
-              <div className="flex shrink-0 items-baseline justify-between border-b border-white/[0.08] px-4 py-3.5">
+            <aside className="flex h-full min-h-0 flex-col overflow-hidden border-l border-white/[0.07] pl-4">
+              <div className="flex shrink-0 items-baseline justify-between pb-3.5">
                 <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/45">
                   Product range
                 </span>
@@ -482,7 +497,7 @@ export default function Products() {
               {/* Independently scrollable — this list scrolls, the page does not. */}
               <div
                 ref={listRef}
-                className="thin-scrollbar pan-y-only min-h-0 flex-1 overflow-y-auto p-2"
+                className="thin-scrollbar pan-y-only -mr-1 min-h-0 flex-1 overflow-y-auto pr-1"
               >
                 {ALL_PRODUCTS.map((product, index) => (
                   <ListRow
@@ -499,7 +514,8 @@ export default function Products() {
               </div>
 
               {isTablet && (
-                <div className="shrink-0 border-t border-white/[0.08] p-3">
+                <div className="shrink-0 pt-3">
+                  <div className="vm-rule mb-3" aria-hidden="true" />
                   <EnquireLink />
                 </div>
               )}
@@ -583,8 +599,11 @@ function ProductStage({
    ========================================================================== */
 
 function Panel({ children }: { children: React.ReactNode }) {
+  // No card. A hairline technical rule opens each block and the scene's own
+  // atmosphere stays visible behind the type.
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/35 p-5 backdrop-blur-md">
+    <div className="pt-5 first:pt-0">
+      <div className="vm-rule mb-4" aria-hidden="true" />
       {children}
     </div>
   );
@@ -691,10 +710,10 @@ function AngleSelector({
           key={angle}
           onClick={() => onSelect(angle)}
           aria-pressed={selected === angle}
-          className={`tap-target cursor-pointer rounded-lg border px-3 font-mono text-[11px] tracking-wide transition-colors ${
+          className={`tap-target cursor-pointer border-b px-2 font-mono text-[11px] tracking-wide transition-colors ${
             selected === angle
-              ? 'border-vm-amber/70 bg-vm-amber/15 text-vm-amber'
-              : 'border-white/12 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white/85'
+              ? 'border-vm-amber text-vm-amber'
+              : 'border-white/12 text-white/45 hover:border-white/35 hover:text-white/80'
           }`}
         >
           {angle}
@@ -708,9 +727,9 @@ function EnquireLink() {
   return (
     <a
       href="#contact"
-      className="tap-target group flex items-center justify-between gap-3 rounded-xl border border-vm-amber/25 bg-vm-amber/[0.07] px-4 text-left transition-colors hover:border-vm-amber/60 hover:bg-vm-amber/[0.12]"
+      className="tap-target group flex items-center justify-between gap-3 border-b border-vm-amber/25 text-left transition-colors hover:border-vm-amber/70"
     >
-      <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-vm-amber">
+      <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-vm-amber/85 transition-colors group-hover:text-vm-amber">
         Enquire about this product
       </span>
       <ArrowRight className="h-4 w-4 shrink-0 text-vm-amber transition-transform group-hover:translate-x-0.5" />
@@ -738,17 +757,15 @@ function ListRow({ product, index, isActive, onSelect, ref }: ListRowProps) {
       ref={ref}
       onClick={onSelect}
       aria-current={isActive}
-      className={`group relative flex w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors duration-300 ${
+      className={`group relative flex w-full cursor-pointer items-center gap-3 border-l-2 py-3 pl-3 pr-2 text-left transition-colors duration-300 ${
         isActive
-          ? 'border-vm-amber/55 bg-vm-amber/[0.09]'
-          : 'border-transparent hover:border-white/12 hover:bg-white/[0.04]'
+          ? 'border-vm-amber bg-white/[0.03]'
+          : 'border-transparent hover:border-white/20 hover:bg-white/[0.02]'
       }`}
     >
       <span
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition-colors ${
-          isActive
-            ? 'border-vm-amber/45 bg-vm-amber/12 text-vm-amber'
-            : 'border-white/10 bg-white/[0.03] text-white/45'
+        className={`flex h-7 w-7 shrink-0 items-center justify-center transition-colors ${
+          isActive ? 'text-vm-amber' : 'text-white/35'
         }`}
       >
         <Icon className="h-4 w-4" />
@@ -794,11 +811,11 @@ function MobileSpecs({
   const preview = rows.slice(0, 2);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/35">
+    <div className="border-t border-white/[0.09]">
       {/* Always-visible key figures, so specs are never fully hidden. */}
-      <dl className="grid grid-cols-2 gap-px bg-white/[0.06]">
+      <dl className="grid grid-cols-2 gap-px bg-white/[0.07]">
         {preview.map((row) => (
-          <div key={row.label} className="bg-vm-void/60 p-3.5">
+          <div key={row.label} className="bg-vm-void/70 py-3.5 pr-3.5 pl-0 [&+&]:pl-3.5">
             <dt className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/35">
               {row.label}
             </dt>
@@ -812,7 +829,7 @@ function MobileSpecs({
       <button
         onClick={onToggle}
         aria-expanded={open}
-        className="tap-target flex w-full cursor-pointer items-center justify-between gap-3 border-t border-white/[0.07] px-4 text-left"
+        className="tap-target flex w-full cursor-pointer items-center justify-between gap-3 border-t border-white/[0.07] text-left"
       >
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/55">
           {open ? 'Hide full specification' : 'Full specification'}
@@ -833,7 +850,7 @@ function MobileSpecs({
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
-            <dl className="space-y-3 border-t border-white/[0.07] px-4 py-4">
+            <dl className="space-y-3 border-t border-white/[0.07] py-4">
               {rows.map((row) => (
                 <div key={row.label}>
                   <dt className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/35">
@@ -892,10 +909,8 @@ function MobileSelector({
               }}
               onClick={() => onSelect(index)}
               aria-current={isActive}
-              className={`flex w-[150px] shrink-0 cursor-pointer flex-col justify-between rounded-xl border p-3 text-left transition-colors duration-300 ${
-                isActive
-                  ? 'border-vm-amber/60 bg-vm-amber/[0.10]'
-                  : 'border-white/10 bg-white/[0.03]'
+              className={`flex w-[150px] shrink-0 cursor-pointer flex-col justify-between border-t-2 pr-3 pt-3 text-left transition-colors duration-300 ${
+                isActive ? 'border-vm-amber' : 'border-white/12'
               }`}
               style={{ minHeight: 88 }}
             >
