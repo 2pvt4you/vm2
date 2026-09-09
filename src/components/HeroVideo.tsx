@@ -4,6 +4,7 @@ import { ScrollController } from '../cinematic/ScrollController';
 import { SceneManager } from '../cinematic/SceneManager';
 import { CanvasRenderer } from '../cinematic/CanvasRenderer';
 import ScrollToBeginHeader from './ScrollToBeginHeader';
+import { useDeviceProfile } from '../hooks/useDeviceProfile';
 
 const newFrames0Glob = import.meta.glob('../newframes/frames0/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
 const newFF1Glob = import.meta.glob('../newframes/ff1/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
@@ -31,6 +32,7 @@ export default function HeroVideo({ setActiveTab, onVideoLoaded, onAnimationFini
   const [priorityLoaded, setPriorityLoaded] = useState(false);
   const [fadeLoader, setFadeLoader] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const { isLowPower, prefersReducedMotion } = useDeviceProfile();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -151,14 +153,12 @@ export default function HeroVideo({ setActiveTab, onVideoLoaded, onAnimationFini
     };
   }, [onVideoLoaded]);
 
-  // Smooth white screen overlay transition calculation towards end of sequence
-  const whiteOverlayOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.94) / 0.05));
-
   return (
     <div 
       ref={containerRef}
       id="hero-cinematic-scroll-container"
-      className="relative w-full h-[360vh] bg-slate-950"
+      className="relative w-full bg-vm-void"
+      style={{ height: `calc(var(--app-vh) * ${isLowPower ? 3 : 3.6})` }}
     >
       {/* 
         Apple-Style Premium Preloader Overlay
@@ -175,7 +175,7 @@ export default function HeroVideo({ setActiveTab, onVideoLoaded, onAnimationFini
             <div className="relative w-16 h-16 flex items-center justify-center">
               <div className="absolute inset-0 rounded-full border-2 border-slate-800/80" />
               <div 
-                className="absolute inset-0 rounded-full border-2 border-t-amber-500 border-r-amber-500 animate-spin"
+                className={`absolute inset-0 rounded-full border-2 border-t-amber-500 border-r-amber-500 ${prefersReducedMotion ? '' : 'animate-spin'}`}
                 style={{ animationDuration: '1.2s' }}
               />
             </div>
@@ -209,7 +209,7 @@ export default function HeroVideo({ setActiveTab, onVideoLoaded, onAnimationFini
         STICKY VIEWPORT CANVAS 
         Stays fixed on screen throughout the scroll space.
       */}
-      <div className="sticky top-0 w-full h-screen overflow-hidden flex items-center justify-center">
+      <div className="sticky top-0 w-full h-stage overflow-hidden flex items-center justify-center">
         {/* Scroll-To-Begin Header Overlay */}
         <ScrollToBeginHeader scrollProgress={scrollProgress} />
 

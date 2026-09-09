@@ -1,34 +1,31 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Box, 
-  Circle, 
-  Nut, 
-  Disc, 
-  Compass, 
-  BoxSelect, 
-  Layers, 
-  ChevronLeft, 
-  ChevronRight, 
-  FileDown, 
-  SlidersHorizontal, 
-  X, 
+import { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  Box,
+  Circle,
+  Nut,
+  Disc,
+  Compass,
+  BoxSelect,
+  Layers,
+  FileDown,
+  ChevronDown,
   ArrowRight,
-  Move3d,
-  Sparkles,
-  ShieldCheck,
-  Cpu,
-  Settings2,
-  CheckCircle2
+  type LucideIcon,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import MercuryViewer from './3d/MercuryViewer';
+import { useDeviceProfile } from '../hooks/useDeviceProfile';
+
 import SEMISB from '../assets/images/Minimalist Simple Business imvoice (1).png';
-import MOULDINGFLOOR from '../assets/images/mouldingfloor.png';
 import ENDCAPIMAGE from '../assets/images/Minimalist Simple Business imvoice (1).png';
+import CASTINGSIMAGE from '../assets/images/telegram-cloud-photo-size-5-6150184609011317423-w.jpg';
+import MOULDINGFLOOR from '../assets/images/mouldingfloor.png';
+
 export interface ProductItem {
   id: string;
   name: string;
   category: string;
-  icon: any;
+  icon: LucideIcon;
   is3D: boolean;
   modelUrl?: string;
   imageUrl?: string;
@@ -41,27 +38,24 @@ export interface ProductItem {
   angles?: string[];
 }
 
-// Standardized specifications applied uniformly to all products as requested
+// Standardized specifications applied uniformly to all products
 const UNIFIED_SPECS = {
   size: 'DN 80mm - DN 1000mm (3" to 40")',
   pnRating: 'PN 10 / PN 16 / PN 25 / PN 40',
   standard: 'IS 9523:2000 & ISO 2531 / BS EN 545',
   materialGrade: 'Ductile Iron',
   testPressure: 'AS PER STANDARD',
-  coating: 'Internal Cement Mortar / High-Build Epoxy; External Zinc + Bitumen'
+  coating:
+    'Internal Cement Mortar / High-Build Epoxy; External Zinc + Bitumen',
 };
 
-interface CategoryItem {
-  id: string;
-  name: string;
-  category: string;
-  icon: any;
-  is3D: boolean;
-  imageUrl: string;
-}
-
+/**
+ * NOTE ON MODEL PATHS
+ * These filenames match `public/glbmodel/` exactly, including case. Linux
+ * hosting is case-sensitive, so the previously capitalised paths 404'd in
+ * production even though they resolved locally.
+ */
 export const ALL_PRODUCTS: ProductItem[] = [
-  // 1. DOUBLE FLANGED BENDS 11.25°, 22.5°, 45°, 90° (glbmodel/dfbend.glb)
   {
     id: 'double-flanged-bends',
     name: 'DOUBLE FLANGED BENDS',
@@ -70,100 +64,90 @@ export const ALL_PRODUCTS: ProductItem[] = [
     is3D: true,
     modelUrl: '/glbmodel/dfbend.glb',
     ...UNIFIED_SPECS,
-    angles: ['90° Bend', '45° Bend', '22.5° Bend', '11.25° Bend']
+    angles: ['90° Bend', '45° Bend', '22.5° Bend', '11.25° Bend'],
   },
-  // 2. DOUBLE FLANGED REDUCER (glbmodel/DFRED.glb)
   {
     id: 'double-flanged-reducer',
     name: 'DOUBLE FLANGED REDUCER',
     category: 'FLANGED FITTING',
     icon: Disc,
     is3D: true,
-    modelUrl: '/glbmodel/DFRED.glb',
-    ...UNIFIED_SPECS
+    modelUrl: '/glbmodel/dfred.glb',
+    ...UNIFIED_SPECS,
   },
-  // 3. DUCKFOOT BEND (glbmodel/DUCKFB.glb)
   {
     id: 'duckfoot-bend',
     name: 'DUCKFOOT BEND',
     category: 'FLANGED BEND',
     icon: Compass,
     is3D: true,
-    modelUrl: '/glbmodel/DUCKFB.glb',
-    ...UNIFIED_SPECS
+    modelUrl: '/glbmodel/duckfb.glb',
+    ...UNIFIED_SPECS,
   },
-  // 4. ALL SOCKET TEE (glbmodel/AST.glb)
   {
     id: 'all-socket-tee',
     name: 'ALL SOCKET TEE',
     category: 'SOCKET FITTING',
     icon: Nut,
     is3D: true,
-    modelUrl: '/glbmodel/AST.glb',
-    ...UNIFIED_SPECS
+    modelUrl: '/glbmodel/ast.glb',
+    ...UNIFIED_SPECS,
   },
-  // 5. ALL FLANGE TEE (glbmodel/AFT.glb)
   {
     id: 'all-flange-tee',
     name: 'ALL FLANGE TEE',
     category: 'FLANGED FITTING',
     icon: Circle,
     is3D: true,
-    modelUrl: '/glbmodel/AFT.glb',
-    ...UNIFIED_SPECS
+    modelUrl: '/glbmodel/aft.glb',
+    ...UNIFIED_SPECS,
   },
-  // 6. AIR VALVE TEE (glbmodel/A_V.glb)
   {
     id: 'air-valve-tee',
     name: 'AIR VALVE TEE',
     category: 'FLANGED FITTING',
     icon: Box,
     is3D: true,
-    modelUrl: '/glbmodel/A_V.glb',
-    ...UNIFIED_SPECS
+    modelUrl: '/glbmodel/a_v.glb',
+    ...UNIFIED_SPECS,
   },
-  // 7. DOUBLE SOCKET BENDS 11.25°, 22.5°, 45°, 90° (glbmodel/DSBEND.glb)
   {
     id: 'double-socket-bends',
     name: 'DOUBLE SOCKET BENDS',
     category: 'SOCKET BEND',
     icon: Nut,
     is3D: true,
-    modelUrl: '/glbmodel/DSBEND.glb',
+    modelUrl: '/glbmodel/dsbend.glb',
     ...UNIFIED_SPECS,
-    angles: ['90° Bend', '45° Bend', '22.5° Bend', '11.25° Bend']
+    angles: ['90° Bend', '45° Bend', '22.5° Bend', '11.25° Bend'],
   },
-  // 8. DOUBLE SOCKET REDUCER (glbmodel/DSRED.glb)
   {
     id: 'double-socket-reducer',
     name: 'DOUBLE SOCKET REDUCER',
     category: 'SOCKET FITTING',
     icon: Disc,
     is3D: true,
-    modelUrl: '/glbmodel/DSRED.glb',
-    ...UNIFIED_SPECS
+    modelUrl: '/glbmodel/dsred.glb',
+    ...UNIFIED_SPECS,
   },
-  // 9. FLANGE SOCKET (glbmodel/FSOCKET.glb)
   {
     id: 'flange-socket',
     name: 'FLANGE SOCKET',
     category: 'FLANGED FITTING',
     icon: BoxSelect,
     is3D: true,
-    modelUrl: '/glbmodel/FSOCKET.glb',
-    ...UNIFIED_SPECS
+    modelUrl: '/glbmodel/fsocket.glb',
+    ...UNIFIED_SPECS,
   },
-  // 10. FLANGE SPIGOT (glbmodel/FSPIGOT.glb)
   {
     id: 'flange-spigot',
     name: 'FLANGE SPIGOT',
     category: 'FLANGED FITTING',
     icon: Circle,
     is3D: true,
-    modelUrl: '/glbmodel/FSPIGOT.glb',
-    ...UNIFIED_SPECS
+    modelUrl: '/glbmodel/fspigot.glb',
+    ...UNIFIED_SPECS,
   },
-  // 11. MECHANICAL JOINT COLLAR
   {
     id: 'mechanical-joint-collar',
     name: 'MECHANICAL JOINT COLLAR',
@@ -171,9 +155,8 @@ export const ALL_PRODUCTS: ProductItem[] = [
     icon: Layers,
     is3D: true,
     modelUrl: '/glbmodel/mjc.glb',
-    ...UNIFIED_SPECS
+    ...UNIFIED_SPECS,
   },
-  // 12. DISMANTLING JOINT
   {
     id: 'dismantling-joint',
     name: 'DISMANTLING JOINT',
@@ -181,9 +164,8 @@ export const ALL_PRODUCTS: ProductItem[] = [
     icon: Layers,
     is3D: true,
     modelUrl: '/glbmodel/DISJ.glb',
-    ...UNIFIED_SPECS
+    ...UNIFIED_SPECS,
   },
-  // 13. SEMICIRCULAR BENDS
   {
     id: 'semicircular-bends',
     name: 'SEMICIRCULAR BENDS',
@@ -191,9 +173,8 @@ export const ALL_PRODUCTS: ProductItem[] = [
     icon: Compass,
     is3D: false,
     imageUrl: SEMISB,
-    ...UNIFIED_SPECS
+    ...UNIFIED_SPECS,
   },
-  // 14. END CAPS
   {
     id: 'end-caps',
     name: 'END CAPS',
@@ -201,9 +182,8 @@ export const ALL_PRODUCTS: ProductItem[] = [
     icon: Disc,
     is3D: false,
     imageUrl: ENDCAPIMAGE,
-    ...UNIFIED_SPECS
+    ...UNIFIED_SPECS,
   },
-  // 15. BELL MOUTH
   {
     id: 'bell-mouth',
     name: 'BELL MOUTH',
@@ -211,641 +191,735 @@ export const ALL_PRODUCTS: ProductItem[] = [
     icon: Circle,
     is3D: true,
     modelUrl: '/glbmodel/BELLM.glb',
-    ...UNIFIED_SPECS
+    ...UNIFIED_SPECS,
   },
-  // 16. MANHOLE COVER & SPECIAL CASTINGS
   {
     id: 'manhole-cover-special-castings',
     name: 'MANHOLE COVER & SPECIAL CASTINGS',
     category: 'CASTINGS & COVERS',
     icon: Layers,
     is3D: false,
-    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
-    ...UNIFIED_SPECS
-  }
-  
+    // Was a remote Unsplash photo; now an actual Varaha castings image.
+    imageUrl: CASTINGSIMAGE,
+    ...UNIFIED_SPECS,
+  },
 ];
 
+const BROCHURE_HREF = '/assets/Varaha_Metaliks_Brochure.pdf';
+
+function specRows(product: ProductItem) {
+  return [
+    { label: 'Size Range', value: product.size },
+    { label: 'Pressure Class', value: product.pnRating },
+    { label: 'Standard', value: product.standard },
+    { label: 'Metallurgy', value: product.materialGrade },
+    { label: 'Test Pressure', value: product.testPressure },
+    { label: 'Coating', value: product.coating },
+  ];
+}
+
+/* ==========================================================================
+   PRODUCT STAGE
+   ========================================================================== */
+
 export default function Products() {
-  const [activeIndex, setActiveIndex] = useState<number>(0);
-  const [isSpecsOpen, setIsSpecsOpen] = useState<boolean>(false);
-  const [selectedAngle, setSelectedAngle] = useState<string>('90° Bend');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [selectedAngle, setSelectedAngle] = useState<string>(
+    ALL_PRODUCTS[0].angles?.[0] ?? ''
+  );
+  const [specsOpen, setSpecsOpen] = useState(false);
 
-  const activeProduct = ALL_PRODUCTS[activeIndex] || ALL_PRODUCTS[0];
+  const {
+    isMobile,
+    isTablet,
+    prefersReducedMotion,
+    width: viewportWidth,
+  } = useDeviceProfile();
 
-  const upperNavScrollerRef = useRef<HTMLDivElement>(null);
-  const navCardRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const listRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const railRef = useRef<HTMLDivElement>(null);
+  const railRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  // Smooth scroll active product button into view
+  /**
+   * Mobile height lock.
+   * Only 2 of the 16 products carry deflection angles, so switching away from
+   * one unmounts the angle row and the whole section would shrink (~124px),
+   * reflowing everything below. Rather than reserve a dead row for the other
+   * 14 products, we remember the tallest composition seen at this width and
+   * hold it as a min-height, so the section height never changes on switch.
+   * Self-tuning (no magic numbers) and reset on width change / rotation.
+   */
+  const mobileStackRef = useRef<HTMLDivElement>(null);
+  const [stackMinH, setStackMinH] = useState(0);
+
+  // Reset the lock when the viewport width changes (rotation / resize).
   useEffect(() => {
-    const el = navCardRefs.current[activeIndex];
-    if (el && upperNavScrollerRef.current) {
-      const container = upperNavScrollerRef.current;
-      const left = el.offsetLeft - container.offsetWidth / 2 + el.offsetWidth / 2;
-      container.scrollTo({ left, behavior: 'smooth' });
-    }
-  }, [activeIndex]);
+    setStackMinH(0);
+  }, [viewportWidth]);
 
-  const handleSwitchProduct = (index: number) => {
+  useEffect(() => {
+    if (!isMobile || specsOpen) return; // only measure the collapsed baseline,
+    const el = mobileStackRef.current; // so expanding specs never locks in a
+    if (!el) return;                   // permanently taller section
+    const h = el.scrollHeight;
+    setStackMinH((prev) => (h > prev ? h : prev));
+  }, [isMobile, activeIndex, specsOpen, selectedAngle, viewportWidth]);
+
+  const active = ALL_PRODUCTS[activeIndex] ?? ALL_PRODUCTS[0];
+
+  const selectProduct = useCallback((index: number) => {
     setActiveIndex(index);
-    if (ALL_PRODUCTS[index].angles && ALL_PRODUCTS[index].angles!.length > 0) {
-      setSelectedAngle(ALL_PRODUCTS[index].angles![0]);
-    }
-  };
+    const next = ALL_PRODUCTS[index];
+    setSelectedAngle(next?.angles?.[0] ?? '');
+  }, []);
 
-  const handleScrollNavLeft = () => {
-    if (upperNavScrollerRef.current) {
-      upperNavScrollerRef.current.scrollBy({ left: -260, behavior: 'smooth' });
-    }
-  };
+  /**
+   * Keep the active entry inside its selector.
+   * Both use container-local scrolling (never `scrollIntoView`), so the page
+   * scroll position is untouched when the product changes.
+   */
+  useEffect(() => {
+    const behavior: ScrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
 
-  const handleScrollNavRight = () => {
-    if (upperNavScrollerRef.current) {
-      upperNavScrollerRef.current.scrollBy({ left: 260, behavior: 'smooth' });
+    const list = listRef.current;
+    const listItem = itemRefs.current[activeIndex];
+    if (list && listItem) {
+      const top =
+        listItem.offsetTop - list.clientHeight / 2 + listItem.clientHeight / 2;
+      list.scrollTo({ top: Math.max(0, top), behavior });
     }
-  };
+
+    const rail = railRef.current;
+    const railItem = railRefs.current[activeIndex];
+    if (rail && railItem) {
+      const left =
+        railItem.offsetLeft - rail.clientWidth / 2 + railItem.clientWidth / 2;
+      rail.scrollTo({ left: Math.max(0, left), behavior });
+    }
+  }, [activeIndex, prefersReducedMotion, isMobile]);
+
+  const stage = (
+    <ProductStage product={active} reduced={prefersReducedMotion} />
+  );
 
   return (
     <section
       id="products"
-      className="relative w-full bg-white text-slate-900 overflow-hidden"
+      className="vm-grain relative w-full overflow-hidden bg-vm-void text-white"
     >
-      {/* ================= FULLSCREEN HERO PRODUCT STAGE (100dvh) ================= */}
-      <div
-        className="w-full h-screen h-[100dvh] max-h-[100dvh] flex flex-col justify-between overflow-hidden select-none relative bg-cover bg-center"
-        style={{ backgroundImage: `url(${MOULDINGFLOOR})` }}
-        >
-        <div
-          className="absolute inset-0 z-0 pointer-events-none"
-          style={{
-            background: `
-              radial-gradient(
-                ellipse 42% 55% at 50% 52%,
-                rgba(255,255,255,0.08) 0%,
-                rgba(255,255,255,0.025) 38%,
-                rgba(0,0,0,0) 68%
-              ),
-              linear-gradient(
-                180deg,
-                rgba(5,10,16,0.16) 0%,
-                rgba(5,10,16,0.02) 35%,
-                rgba(5,10,16,0.18) 100%
-              ),
-              radial-gradient(
-                ellipse at center,
-                rgba(0,0,0,0) 42%,
-                rgba(0,0,0,0.28) 100%
-              )
-            `,
-          }}
+      {/* Foundry underlay — carries the bridge's tone into the stage. */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <img
+          src={MOULDINGFLOOR}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover opacity-[0.13]"
         />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_60%_at_50%_48%,rgba(212,165,72,0.10),transparent_70%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-vm-void via-vm-void/55 to-vm-void" />
+      </div>
 
-        S{/* ================= PREMIUM PRODUCT SLIDER ================= */}
-        <div className="relative w-full shrink-0 z-30 px-3 sm:px-6 lg:px-8 py-3">
-
-          {/* Glass rail */}
-          <div className="relative rounded-2xl overflow-hidden border border-white/30 bg-slate-950/55 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.22)]">
-
-            {/* Subtle golden atmosphere */}
-            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_-80%,rgba(212,165,72,0.20),transparent_55%)]" />
-
-            {/* Navigation controls */}
-            <button
-              onClick={handleScrollNavLeft}
-              className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20
-                        w-9 h-9 sm:w-10 sm:h-10 rounded-full
-                        bg-slate-950/70 backdrop-blur-md
-                        border border-white/20
-                        text-white
-                        flex items-center justify-center
-                        hover:border-amber-400/70
-                        hover:text-amber-300
-                        hover:bg-slate-900/90
-                        transition-all duration-300
-                        active:scale-90
-                        shadow-lg"
-              title="Previous Products"
-              aria-label="Previous Products"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={handleScrollNavRight}
-              className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20
-                        w-9 h-9 sm:w-10 sm:h-10 rounded-full
-                        bg-slate-950/70 backdrop-blur-md
-                        border border-white/20
-                        text-white
-                        flex items-center justify-center
-                        hover:border-amber-400/70
-                        hover:text-amber-300
-                        hover:bg-slate-900/90
-                        transition-all duration-300
-                        active:scale-90
-                        shadow-lg"
-              title="Next Products"
-              aria-label="Next Products"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-
-            {/* Product slider */}
-            <div
-              ref={upperNavScrollerRef}
-              className="
-                relative flex items-stretch gap-2.5 sm:gap-3
-                overflow-x-auto scroll-smooth
-                px-12 sm:px-16 py-2.5
-                [scrollbar-width:thin]
-                [scrollbar-color:rgba(201,150,50,0.8)_transparent]
-              "
-              style={{
-                scrollbarWidth: 'thin',
-              }}
-            >
-
-              {ALL_PRODUCTS.map((prod, idx) => {
-                const isActive = activeIndex === idx;
-
-                return (
-                  <button
-                    key={prod.id}
-                    ref={(el) => {
-                      navCardRefs.current[idx] = el;
-                    }}
-                    onClick={() => handleSwitchProduct(idx)}
-                    className={`
-                      group relative shrink-0
-                      w-[185px] sm:w-[215px] lg:w-[225px]
-                      min-h-[72px] sm:min-h-[78px]
-                      rounded-xl
-                      px-4 py-3
-                      text-left
-                      overflow-hidden
-                      transition-all duration-300
-                      cursor-pointer
-                      border
-                      ${
-                        isActive
-                          ? `
-                            bg-gradient-to-br
-                            from-amber-300/25
-                            via-amber-500/10
-                            to-slate-950/50
-                            border-amber-400/80
-                            shadow-[0_0_25px_rgba(201,150,50,0.18)]
-                          `
-                          : `
-                            bg-white/[0.07]
-                            border-white/[0.12]
-                            hover:bg-white/[0.12]
-                            hover:border-amber-300/40
-                          `
-                      }
-                    `}
-                  >
-
-                    {/* Active golden glow */}
-                    {isActive && (
-                      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_15%_20%,rgba(255,210,100,0.22),transparent_55%)]" />
-                    )}
-
-                    {/* Gold active line */}
-                    <div
-                      className={`
-                        absolute left-0 top-0 bottom-0 w-[2px]
-                        transition-all duration-300
-                        ${isActive ? 'bg-amber-400' : 'bg-transparent group-hover:bg-amber-400/40'}
-                      `}
-                    />
-
-                    {/* Product information */}
-                    <div className="relative z-10 flex flex-col justify-center h-full">
-
-                      <span
-                        className={`
-                          text-[12px] sm:text-[13px]
-                          font-bold
-                          uppercase
-                          tracking-wide
-                          leading-snug
-                          line-clamp-2
-                          transition-colors duration-300
-                          ${
-                            isActive
-                              ? 'text-white'
-                              : 'text-white/85 group-hover:text-white'
-                          }
-                        `}
-                      >
-                        {prod.name}
-                      </span>
-
-                      <span
-                        className={`
-                          mt-1
-                          text-[9px] sm:text-[10px]
-                          font-mono
-                          uppercase
-                          tracking-[0.14em]
-                          truncate
-                          transition-colors duration-300
-                          ${
-                            isActive
-                              ? 'text-amber-300'
-                              : 'text-white/40 group-hover:text-amber-200/70'
-                          }
-                        `}
-                      >
-                        {prod.category}
-                      </span>
-
-                    </div>
-
-                    {/* Active indicator */}
-                    {isActive && (
-                      <span className="
-                        absolute right-3 bottom-3
-                        w-1.5 h-1.5
-                        rounded-full
-                        bg-amber-300
-                        shadow-[0_0_8px_rgba(252,211,77,0.9)]
-                      " />
-                    )}
-
-                  </button>
-                );
-              })}
-
-            </div>
-
-            {/* Elegant slider progress line */}
-            <div className="mx-12 sm:mx-16 mb-1 h-px bg-white/[0.08] relative overflow-hidden rounded-full">
-              <div className="absolute left-0 top-0 h-full w-1/4 bg-gradient-to-r from-transparent via-amber-400/80 to-transparent" />
-            </div>
-
+      <div className="relative mx-auto w-full max-w-[1600px] px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        {/* ---------------- Section header ---------------- */}
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4 lg:mb-10">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.42em] text-vm-amber/85 sm:text-[11px]">
+              Product showcase
+            </p>
+            <h2 className="mt-3 text-2xl font-light leading-tight tracking-tight text-white sm:text-4xl">
+              Ductile iron fittings &amp;{' '}
+              <span className="font-editorial italic text-vm-amber">
+                heavy castings
+              </span>
+            </h2>
           </div>
 
-                    {/* ================= MAIN HERO VIEWPORT (CLEAN, PROMINENT 3D HERO) ================= */}
-          <div className="relative w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+          <a
+            href={BROCHURE_HREF}
+            download="Varaha_Metaliks_Brochure.pdf"
+            className="tap-target group inline-flex items-center gap-2.5 rounded-lg border border-white/12 bg-white/[0.04] px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-white/70 transition-colors hover:border-vm-amber/45 hover:text-white sm:text-[11px]"
+          >
+            <FileDown className="h-3.5 w-3.5 shrink-0 text-vm-amber" />
+            <span>Corporate brochure</span>
+          </a>
+        </div>
 
-            {/* Transparent 3D Stage or High-Res Image Fallback */}
-            {activeProduct.is3D && activeProduct.modelUrl ? (
-              <MercuryViewer
-                modelUrl={activeProduct.modelUrl}
-                productName={activeProduct.name}
-                className="w-full h-full"
+        {/* ==================================================================
+            MOBILE COMPOSITION
+            identity -> 3D product -> key specifications -> selector
+            Deliberately a different composition, not a squeezed desktop grid.
+           ================================================================== */}
+        {isMobile ? (
+          <div
+            ref={mobileStackRef}
+            className="flex flex-col gap-4"
+            style={stackMinH ? { minHeight: stackMinH } : undefined}
+          >
+            <ProductIdentity product={active} compact />
+
+            <div className="relative h-[46vh] min-h-[280px] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
+              {stage}
+            </div>
+
+            {active.angles && active.angles.length > 0 && (
+              <AngleSelector
+                angles={active.angles}
+                selected={selectedAngle}
+                onSelect={setSelectedAngle}
               />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center p-6 relative">
-                <div className="relative max-w-lg w-full h-[55vh] rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-slate-50 flex items-center justify-center">
-                  <img
-                    src={activeProduct.imageUrl}
-                    alt={activeProduct.name}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-5 text-white">
-                    <span className="text-amber-400 font-mono text-[10px] font-bold uppercase tracking-wider">
-                      {activeProduct.category}
-                    </span>
-
-                    <h3 className="text-xl font-bold font-display">
-                      {activeProduct.name}
-                    </h3>
-                  </div>
-                </div>
-              </div>
             )}
 
+            <MobileSpecs
+              product={active}
+              open={specsOpen}
+              onToggle={() => setSpecsOpen((v) => !v)}
+            />
+
+            <MobileSelector
+              activeIndex={activeIndex}
+              onSelect={selectProduct}
+              railRef={railRef}
+              railRefs={railRefs}
+            />
+
+            <EnquireLink />
           </div>
+        ) : (
+          /* ==================================================================
+             DESKTOP / TABLET COMPOSITION
+             LEFT identity + specs | CENTER model | RIGHT product list
+             The centre column is never overlaid by panel UI.
+             ================================================================== */
+          <div
+            className={`grid gap-5 ${
+              isTablet
+                ? 'grid-cols-[minmax(0,1fr)_260px]'
+                : 'grid-cols-[300px_minmax(0,1fr)_320px] xl:grid-cols-[330px_minmax(0,1fr)_350px]'
+            }`}
+            style={{ height: 'min(78vh, 760px)' }}
+          >
+            {/* ---------------- LEFT ---------------- */}
+            {!isTablet && (
+              <aside className="thin-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+                <Panel>
+                  <ProductIdentity product={active} />
+                </Panel>
 
-          {/* ================= COMPACT SPECIFICATIONS TRIGGER & EXPANDABLE CARD ================= */}
-          <div className="absolute top-4 left-4 sm:top-5 sm:left-6 z-20 ...">
-            {isSpecsOpen ? (
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-2xl p-4 sm:p-5 text-slate-900 w-[calc(100vw-2rem)] max-w-sm sm:max-w-md animate-in fade-in zoom-in-95 duration-200">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-3 pb-2.5 border-b border-slate-100">
-                  <div>
-                    <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-500 px-1.5 py-0.5 rounded bg-slate-100">
-                      {activeProduct.category}
-                    </span>
-                    <h2 className="text-lg sm:text-xl font-display font-black text-slate-950 tracking-tight leading-tight mt-1">
-                      {activeProduct.name}
-                    </h2>
-                  </div>
-
-                  <button
-                    onClick={() => setIsSpecsOpen(false)}
-                    className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
-                    title="Close Specifications"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Angle Variant Buttons (if bends) */}
-                {activeProduct.angles && activeProduct.angles.length > 0 && (
-                  <div className="py-2 border-b border-slate-100">
-                    <span className="text-[9px] font-mono uppercase font-bold text-slate-400 tracking-wider block mb-1">
-                      Deflection Angles:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {activeProduct.angles.map((angle) => (
-                        <button
-                          key={angle}
-                          onClick={() => setSelectedAngle(angle)}
-                          className={`px-2 py-0.5 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
-                            selectedAngle === angle
-                              ? 'bg-blue-700 text-white shadow-xs'
-                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                          }`}
-                        >
-                          {angle}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                {active.angles && active.angles.length > 0 && (
+                  <Panel>
+                    <PanelLabel>Deflection angles</PanelLabel>
+                    <AngleSelector
+                      angles={active.angles}
+                      selected={selectedAngle}
+                      onSelect={setSelectedAngle}
+                    />
+                  </Panel>
                 )}
 
-                {/* Standardized Technical Specs Grid */}
-                <div className="grid grid-cols-2 gap-2 py-2.5 text-xs border-b border-slate-100">
-                  <div className="bg-slate-50 p-2 rounded-lg">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Size Range
-                    </span>
-                    <span className="font-bold text-slate-900 text-[11px]">
-                      {activeProduct.size}
-                    </span>
-                  </div>
+                <Panel>
+                  <PanelLabel>Technical specification</PanelLabel>
+                  <SpecList product={active} />
+                </Panel>
 
-                  <div className="bg-slate-50 p-2 rounded-lg">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Pressure Class
-                    </span>
-                    <span className="font-bold text-blue-700 text-[11px]">
-                      {activeProduct.pnRating}
-                    </span>
-                  </div>
+                <Panel>
+                  <PanelLabel>Materials &amp; standards</PanelLabel>
+                  <dl className="mt-3 space-y-2.5">
+                    <MetaRow label="Grade" value={active.materialGrade} />
+                    <MetaRow label="Conformance" value={active.standard} />
+                    <MetaRow label="Protection" value={active.coating} />
+                  </dl>
+                </Panel>
 
-                  <div className="bg-slate-50 p-2 rounded-lg">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Standard
-                    </span>
-                    <span className="font-bold text-slate-800 text-[11px]">
-                      {activeProduct.standard}
-                    </span>
-                  </div>
-
-                  <div className="bg-slate-50 p-2 rounded-lg">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Metallurgy
-                    </span>
-                    <span className="font-bold text-slate-900 text-[11px]">
-                      {activeProduct.materialGrade}
-                    </span>
-                  </div>
-
-                  <div className="bg-slate-50 p-2 rounded-lg">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Test Pressure
-                    </span>
-                    <span className="font-bold text-slate-900 text-[11px]">
-                      {activeProduct.testPressure}
-                    </span>
-                  </div>
-
-                  <div className="bg-slate-50 p-2 rounded-lg">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Coating
-                    </span>
-                    <span className="font-medium text-slate-700 text-[10px] leading-tight block truncate" title={activeProduct.coating}>
-                      {activeProduct.coating}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Footer Action */}
-                <div className="pt-2.5 flex items-center justify-between">
-                  <a
-                    href="#contact"
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs"
-                  >
-                    <span>Inquire Now</span>
-                    <ArrowRight className="w-3 h-3 text-amber-400" />
-                  </a>
-
-                  <button
-                    onClick={() => setIsSpecsOpen(false)}
-                    className="text-xs font-mono font-medium text-slate-500 hover:text-slate-900 cursor-pointer"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* Lightweight Minimalist Specifications Trigger Pill */
-              <button
-                onClick={() => setIsSpecsOpen(true)}
-                className="bg-white/85 backdrop-blur-md hover:bg-white border border-slate-200/80 shadow-xs px-3 py-1.5 rounded-full flex items-center gap-2 cursor-pointer transition-all hover:scale-102 group text-slate-700 hover:text-slate-950"
-                title="View Technical Specifications"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-600 transition-colors" />
-                <span className="text-xs font-semibold tracking-tight">
-                  Click to view specifications
-                </span>
-                <span className="text-[10px] font-mono text-slate-400 group-hover:text-slate-600">
-                  ▾
-                </span>
-              </button>
+                <EnquireLink />
+              </aside>
             )}
-          </div>
 
-        </div>
+            {/* ---------------- CENTER ---------------- */}
+            <div className="relative flex h-full min-h-0 flex-col">
+              <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.015]">
+                {stage}
+              </div>
 
-                {/* ================= FIXED HERO BOTTOM ACTIONS ================= */}
-        <div className="absolute left-0 right-0 bottom-0 z-40">
-
-          {/* Specifications trigger */}
-          {!isSpecsOpen && (
-            <div className="flex justify-center pb-2 sm:pb-3">
-              <button
-                onClick={() => setIsSpecsOpen(true)}
-                className="
-                  group inline-flex items-center gap-2
-                  px-4 py-2
-                  rounded-full
-                  bg-white/80 backdrop-blur-xl
-                  border border-white/70
-                  shadow-[0_8px_30px_rgba(0,0,0,0.18)]
-                  text-slate-800
-                  hover:bg-white
-                  hover:border-amber-400/70
-                  hover:text-slate-950
-                  transition-all duration-300
-                  cursor-pointer
-                "
-                title="View Technical Specifications"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-amber-600 transition-transform group-hover:rotate-6" />
-
-                <span className="text-xs sm:text-sm font-semibold tracking-tight">
-                  Click to view specifications
-                </span>
-
-                <span className="text-[10px] text-slate-400 group-hover:text-amber-600 transition-colors">
-                  ↑
-                </span>
-              </button>
+              {/* Wordmark sits beneath the model, never across it. */}
+              <div className="shrink-0 pt-4 text-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={active.id}
+                    initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={
+                      prefersReducedMotion
+                        ? undefined
+                        : { opacity: 0, y: -8, transition: { duration: 0.2 } }
+                    }
+                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <h3 className="truncate text-lg font-light tracking-[0.14em] text-white/85 xl:text-xl">
+                      {active.name}
+                    </h3>
+                    <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.3em] text-vm-amber/70">
+                      {active.category}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </div>
-          )}
 
-          {/* Corporate brochure */}
-          <a
-            href="/assets/Varaha_Metaliks_Brochure.pdf"
-            download="Varaha_Metaliks_Brochure.pdf"
-            className="
-              w-full
-              h-12 sm:h-13
-              px-4
-              flex items-center justify-center gap-2.5
-              bg-slate-950/95
-              backdrop-blur-xl
-              border-t border-amber-500/20
-              text-white
-              hover:bg-slate-900
-              transition-all duration-300
-              cursor-pointer
-              group
-            "
-          >
-            <FileDown className="w-4 h-4 text-amber-400 group-hover:translate-y-0.5 transition-transform" />
+            {/* ---------------- RIGHT ---------------- */}
+            <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/35 backdrop-blur-md">
+              <div className="flex shrink-0 items-baseline justify-between border-b border-white/[0.08] px-4 py-3.5">
+                <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/45">
+                  Product range
+                </span>
+                <span className="font-mono text-[10px] tracking-[0.18em] text-vm-amber/70">
+                  {String(activeIndex + 1).padStart(2, '0')}/
+                  {ALL_PRODUCTS.length}
+                </span>
+              </div>
 
-            <span className="
-              text-xs sm:text-sm
-              font-mono font-bold
-              tracking-[0.16em]
-              uppercase
-              group-hover:text-amber-400
-              transition-colors
-            ">
-              DOWNLOAD OUR CORPORATE BROCHURE
-            </span>
-          </a>
+              {/* Independently scrollable — this list scrolls, the page does not. */}
+              <div
+                ref={listRef}
+                className="thin-scrollbar pan-y-only min-h-0 flex-1 overflow-y-auto p-2"
+              >
+                {ALL_PRODUCTS.map((product, index) => (
+                  <ListRow
+                    key={product.id}
+                    ref={(el) => {
+                      itemRefs.current[index] = el;
+                    }}
+                    product={product}
+                    index={index}
+                    isActive={index === activeIndex}
+                    onSelect={() => selectProduct(index)}
+                  />
+                ))}
+              </div>
 
-        </div>
+              {isTablet && (
+                <div className="shrink-0 border-t border-white/[0.08] p-3">
+                  <EnquireLink />
+                </div>
+              )}
+            </aside>
+          </div>
+        )}
 
+        {/* Tablet keeps the specification block below the stage rather than
+            crowding a third column into a narrow viewport. */}
+        {isTablet && (
+          <div className="mt-5 grid grid-cols-2 gap-4">
+            <Panel>
+              <ProductIdentity product={active} />
+              {active.angles && active.angles.length > 0 && (
+                <div className="mt-4">
+                  <AngleSelector
+                    angles={active.angles}
+                    selected={selectedAngle}
+                    onSelect={setSelectedAngle}
+                  />
+                </div>
+              )}
+            </Panel>
+            <Panel>
+              <PanelLabel>Technical specification</PanelLabel>
+              <SpecList product={active} />
+            </Panel>
+          </div>
+        )}
       </div>
+    </section>
+  );
+}
 
-      {/* ================= COMPREHENSIVE PRODUCT & CASTING CAPABILITIES OVERVIEW ================= */}
-      <div className="py-20 bg-slate-900 text-white border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 font-mono text-xs font-bold uppercase tracking-wider mb-4 border border-amber-500/20">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Full Spectrum Manufacturing</span>
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight text-white mb-4">
-              Ductile Iron Pipe Fittings & Heavy Castings
-            </h2>
-            <p className="text-slate-300 text-base leading-relaxed">
-              Varaha Metaliks Pvt. Ltd. is into manufacturing of excellent quality of Ductile Iron Pipe Fittings (as per IS 9523:2000), Engineering Castings of various grades and Ductile Iron Manhole Covers. Our products are accepted in domestic projects and globally with all different varieties.
-            </p>
+/* ==========================================================================
+   STAGE — 3D model, or photography for the non-modelled products
+   ========================================================================== */
+
+function ProductStage({
+  product,
+  reduced,
+}: {
+  product: ProductItem;
+  reduced: boolean;
+}) {
+  if (product.is3D && product.modelUrl) {
+    return (
+      <MercuryViewer
+        modelUrl={product.modelUrl}
+        productName={product.name}
+        className="h-full w-full"
+      />
+    );
+  }
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={product.id}
+        initial={reduced ? false : { opacity: 0, scale: 1.04 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={reduced ? undefined : { opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        className="flex h-full w-full items-center justify-center p-6"
+      >
+        <img
+          src={product.imageUrl}
+          alt={product.name}
+          loading="lazy"
+          decoding="async"
+          className="max-h-full max-w-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.6)]"
+          referrerPolicy="no-referrer"
+        />
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/* ==========================================================================
+   SHARED PIECES
+   ========================================================================== */
+
+function Panel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/35 p-5 backdrop-blur-md">
+      {children}
+    </div>
+  );
+}
+
+function PanelLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/40">
+      {children}
+    </span>
+  );
+}
+
+function ProductIdentity({
+  product,
+  compact = false,
+}: {
+  product: ProductItem;
+  compact?: boolean;
+}) {
+  const Icon = product.icon;
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={product.id}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6, transition: { duration: 0.18 } }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="flex items-center gap-2.5">
+          <Icon className="h-4 w-4 shrink-0 text-vm-amber" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.26em] text-vm-amber/80">
+            {product.category}
+          </span>
+        </div>
+
+        <h3
+          className={`mt-3 font-light leading-tight tracking-tight text-white ${
+            compact ? 'text-xl' : 'text-2xl xl:text-[1.7rem]'
+          }`}
+        >
+          {product.name}
+        </h3>
+
+        {!compact && (
+          <p className="mt-3 text-xs leading-relaxed text-white/45">
+            Cast, machined and coated in-house to {product.standard}, then
+            hydrostatically proved before dispatch.
+          </p>
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function SpecList({ product }: { product: ProductItem }) {
+  return (
+    <dl className="mt-3 space-y-2.5">
+      {specRows(product).map((row) => (
+        <div
+          key={row.label}
+          className="flex items-start justify-between gap-3 border-b border-white/[0.06] pb-2.5 last:border-0 last:pb-0"
+        >
+          <dt className="shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-white/35">
+            {row.label}
+          </dt>
+          <dd className="text-right text-[11px] leading-snug text-white/80">
+            {row.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function MetaRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <dt className="shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-white/35">
+        {label}
+      </dt>
+      <dd className="text-right text-[11px] leading-snug text-white/70">
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function AngleSelector({
+  angles,
+  selected,
+  onSelect,
+}: {
+  angles: string[];
+  selected: string;
+  onSelect: (angle: string) => void;
+}) {
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {angles.map((angle) => (
+        <button
+          key={angle}
+          onClick={() => onSelect(angle)}
+          aria-pressed={selected === angle}
+          className={`tap-target cursor-pointer rounded-lg border px-3 font-mono text-[11px] tracking-wide transition-colors ${
+            selected === angle
+              ? 'border-vm-amber/70 bg-vm-amber/15 text-vm-amber'
+              : 'border-white/12 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white/85'
+          }`}
+        >
+          {angle}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function EnquireLink() {
+  return (
+    <a
+      href="#contact"
+      className="tap-target group flex items-center justify-between gap-3 rounded-xl border border-vm-amber/25 bg-vm-amber/[0.07] px-4 text-left transition-colors hover:border-vm-amber/60 hover:bg-vm-amber/[0.12]"
+    >
+      <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-vm-amber">
+        Enquire about this product
+      </span>
+      <ArrowRight className="h-4 w-4 shrink-0 text-vm-amber transition-transform group-hover:translate-x-0.5" />
+    </a>
+  );
+}
+
+/* ==========================================================================
+   DESKTOP RIGHT-HAND LIST ROW
+   ========================================================================== */
+
+interface ListRowProps {
+  product: ProductItem;
+  index: number;
+  isActive: boolean;
+  onSelect: () => void;
+  ref?: React.Ref<HTMLButtonElement>;
+}
+
+function ListRow({ product, index, isActive, onSelect, ref }: ListRowProps) {
+  const Icon = product.icon;
+
+  return (
+    <button
+      ref={ref}
+      onClick={onSelect}
+      aria-current={isActive}
+      className={`group relative flex w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors duration-300 ${
+        isActive
+          ? 'border-vm-amber/55 bg-vm-amber/[0.09]'
+          : 'border-transparent hover:border-white/12 hover:bg-white/[0.04]'
+      }`}
+    >
+      <span
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+          isActive
+            ? 'border-vm-amber/45 bg-vm-amber/12 text-vm-amber'
+            : 'border-white/10 bg-white/[0.03] text-white/45'
+        }`}
+      >
+        <Icon className="h-4 w-4" />
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span
+          className={`block truncate text-[12px] font-medium tracking-wide transition-colors ${
+            isActive ? 'text-white' : 'text-white/70 group-hover:text-white/90'
+          }`}
+        >
+          {product.name}
+        </span>
+        <span className="mt-0.5 block truncate font-mono text-[9px] uppercase tracking-[0.16em] text-white/35">
+          {String(index + 1).padStart(2, '0')} • {product.category}
+        </span>
+      </span>
+
+      <span
+        className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
+          isActive ? 'bg-vm-amber' : 'bg-transparent'
+        }`}
+        aria-hidden="true"
+      />
+    </button>
+  );
+}
+
+/* ==========================================================================
+   MOBILE PIECES
+   ========================================================================== */
+
+function MobileSpecs({
+  product,
+  open,
+  onToggle,
+}: {
+  product: ProductItem;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const rows = specRows(product);
+  const preview = rows.slice(0, 2);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/35">
+      {/* Always-visible key figures, so specs are never fully hidden. */}
+      <dl className="grid grid-cols-2 gap-px bg-white/[0.06]">
+        {preview.map((row) => (
+          <div key={row.label} className="bg-vm-void/60 p-3.5">
+            <dt className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/35">
+              {row.label}
+            </dt>
+            <dd className="mt-1.5 text-[11px] leading-snug text-white/85">
+              {row.value}
+            </dd>
           </div>
+        ))}
+      </dl>
 
-          {/* Three Key Pillar Statements matching reference brochure */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            
-            {/* Pillar 1: Innovation */}
-            <div className="bg-slate-800/80 p-8 rounded-3xl border border-slate-700/80 flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-6">
-                  <Cpu className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold font-display text-white mb-3">
-                  Technological Innovation
-                </h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                  At the forefront of the piping and casting industry, our company consistently integrates cutting-edge advancements and technologies into our products, ensuring they remain innovative and effective.
-                </p>
-              </div>
-            </div>
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        className="tap-target flex w-full cursor-pointer items-center justify-between gap-3 border-t border-white/[0.07] px-4 text-left"
+      >
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/55">
+          {open ? 'Hide full specification' : 'Full specification'}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-vm-amber transition-transform duration-300 ${
+            open ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
 
-            {/* Pillar 2: Customization */}
-            <div className="bg-slate-800/80 p-8 rounded-3xl border border-slate-700/80 flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-6">
-                  <Settings2 className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold font-display text-white mb-3">
-                  Tailored Customization
-                </h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                  We recognize that every project is unique. Our extensive customization options enable us to adapt our products to your project's exact specifications, ensuring seamless integration and optimal performance.
-                </p>
-              </div>
-            </div>
-
-            {/* Pillar 3: Quality Assurance */}
-            <div className="bg-slate-800/80 p-8 rounded-3xl border border-slate-700/80 flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-6">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold font-display text-white mb-3">
-                  Quality Assurance
-                </h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                  Quality is our hallmark. Every product, whether it's Ductile Iron Pipe Fittings or DI Manhole Covers, undergoes rigorous scrutiny, surpassing industry benchmarks for durability and performance.
-                </p>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Product Offerings Checklist Grid */}
-          <div className="bg-slate-950 p-8 sm:p-10 rounded-3xl border border-slate-800">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-slate-800">
-              <div>
-                <h3 className="text-2xl font-bold font-display text-white mb-2">
-                  Comprehensive Product Categories
-                </h3>
-                <p className="text-slate-400 text-sm">
-                  Manufactured and certified strictly according to IS 9523:2000, ISO 2531, and BS EN 545.
-                </p>
-              </div>
-              <a
-                href="#contact"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition-all cursor-pointer self-start md:self-auto shadow-lg shadow-amber-500/20"
-              >
-                <span>Request Quotation</span>
-                <ArrowRight className="w-4 h-4" />
-              </a>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-8 text-sm">
-              {[
-                'Flange Fittings',
-                'MJ Collar & Couplings',
-                'DI Manhole Covers',
-                'Dismantling Joints',
-                'Engineering Products',
-                'Special Castings & More'
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span className="text-slate-200 font-medium text-xs truncate">{item}</span>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <dl className="space-y-3 border-t border-white/[0.07] px-4 py-4">
+              {rows.map((row) => (
+                <div key={row.label}>
+                  <dt className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/35">
+                    {row.label}
+                  </dt>
+                  <dd className="mt-1 text-[12px] leading-snug text-white/80">
+                    {row.value}
+                  </dd>
                 </div>
               ))}
-            </div>
-          </div>
+            </dl>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
-        </div>
+function MobileSelector({
+  activeIndex,
+  onSelect,
+  railRef,
+  railRefs,
+}: {
+  activeIndex: number;
+  onSelect: (index: number) => void;
+  railRef: React.RefObject<HTMLDivElement | null>;
+  railRefs: React.MutableRefObject<Array<HTMLButtonElement | null>>;
+}) {
+  return (
+    <div>
+      <div className="mb-2.5 flex items-baseline justify-between px-0.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/40">
+          Product range
+        </span>
+        <span className="font-mono text-[10px] tracking-[0.18em] text-vm-amber/70">
+          {String(activeIndex + 1).padStart(2, '0')}/{ALL_PRODUCTS.length}
+        </span>
       </div>
 
-    </section>
+      {/* Horizontal rail, single-axis touch: swiping it cannot steal the
+          page's vertical scroll, and it cannot widen the document. */}
+      <div
+        ref={railRef}
+        className="pan-x-only no-scrollbar -mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1"
+      >
+        {ALL_PRODUCTS.map((product, index) => {
+          const isActive = index === activeIndex;
+          const Icon = product.icon;
+
+          return (
+            <button
+              key={product.id}
+              ref={(el) => {
+                railRefs.current[index] = el;
+              }}
+              onClick={() => onSelect(index)}
+              aria-current={isActive}
+              className={`flex w-[150px] shrink-0 cursor-pointer flex-col justify-between rounded-xl border p-3 text-left transition-colors duration-300 ${
+                isActive
+                  ? 'border-vm-amber/60 bg-vm-amber/[0.10]'
+                  : 'border-white/10 bg-white/[0.03]'
+              }`}
+              style={{ minHeight: 88 }}
+            >
+              <Icon
+                className={`h-4 w-4 shrink-0 ${
+                  isActive ? 'text-vm-amber' : 'text-white/40'
+                }`}
+              />
+              <span>
+                <span
+                  className={`line-clamp-2 text-[11px] font-medium leading-snug ${
+                    isActive ? 'text-white' : 'text-white/65'
+                  }`}
+                >
+                  {product.name}
+                </span>
+                <span className="mt-1 block truncate font-mono text-[9px] uppercase tracking-[0.14em] text-white/30">
+                  {product.category}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

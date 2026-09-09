@@ -1,857 +1,412 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { ChevronDown } from 'lucide-react';
-import gsap from 'gsap';
-import { SplitText } from 'gsap/SplitText';
-
-gsap.registerPlugin(SplitText);
+import { useDeviceProfile } from '../hooks/useDeviceProfile';
 
 interface ScrollToBeginHeaderProps {
   scrollProgress: number;
 }
 
 /**
- * Final cinematic text overlay.
+ * Cinematic scroll-driven editorial typography over the factory frame sequence.
  *
- * IMPORTANT:
- * - The parent Three.js section should remain the single owner of Lenis/
- *   ScrollTrigger/scrollProgress.
- * - This component only consumes scrollProgress.
- * - All three statements stay mounted so SplitText can safely work with them.
- * - The factory/video remains visible underneath the typography.
+ * OWNERSHIP
+ * - The parent (HeroVideo) remains the single owner of the scroll container and
+ *   the 335-frame sequence. This component only *consumes* scrollProgress.
+ *
+ * CHOREOGRAPHY
+ * - Every statement runs one continuous ENTER -> TRAVEL -> HOLD -> EXIT arc.
+ * - Desktop: the headline physically travels LEFT -> RIGHT across the upper
+ *   half of the viewport, so the factory below is never covered.
+ * - Mobile: the same story beats play as a vertically-composed, tightly
+ *   clamped sequence. The horizontal journey is reduced to a short parallax
+ *   drift so it can never produce horizontal page scroll.
  */
 
-type StatementProps = {
-  progress: number;
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+/** Smooth, symmetric easing for the travel arc. */
+const easeInOut = (t: number) =>
+  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+/** Fast-out easing for entrances. */
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+
+interface Phase {
+  /** 0 outside the statement, ramps 0->1->0 across enter/hold/exit */
   opacity: number;
-  children: React.ReactNode;
-  className?: string;
-};
-
-function SplitReveal({
-  progress,
-  children,
-  className = '',
-  highlight = true,
-}: {
-  progress: number;
-  children: React.ReactNode;
-  className?: string;
-  highlight?: boolean;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const smoothProgress = useRef(0);
-  const targetProgress = useRef(0);
-
-  useLayoutEffect(() => {
-    if (!ref.current) return;
-
-    const ctx = gsap.context(() => {
-      const ticker = () => {
-        /*
-         * Smooth the scroll-driven progress.
-         *
-         * 0.10 gives us a much more responsive movement than the
-         * previous 0.075 while still preventing jitter.
-         */
-        smoothProgress.current +=
-          (targetProgress.current - smoothProgress.current) * 0.10;
-
-        const p = gsap.utils.clamp(0, 1, smoothProgress.current);
-
-        /*
-         * Left → right information reveal.
-         *
-         * Unlike the previous character-by-character vertical reveal,
-         * the complete phrase behaves as one visual object.
-         */
-        const revealPercent = p * 100;
-
-        if (!ref.current) return;
-
-        gsap.set(ref.current, {
-          '--reveal': `${revealPercent}%`,
-          '--reveal-x': `${-18 + p * 18}px`,
-          '--beam-x': `${revealPercent}%`,
-        });
-      };
-
-      gsap.ticker.add(ticker);
-
-      return () => {
-        gsap.ticker.remove(ticker);
-      };
-    }, ref);
-
-    return () => ctx.revert();
-  }, []);
-
-  useLayoutEffect(() => {
-    targetProgress.current = gsap.utils.clamp(0, 1, progress);
-  }, [progress]);
-
-  return (
-    <span
-      ref={ref}
-      className={`relative inline-block ${className}`}
-      style={
-        {
-          color: '#061B57',
-          '--reveal': '0%',
-          '--reveal-x': '-18px',
-          '--beam-x': '0%',
-        } as React.CSSProperties
-      }
-    >
-      {/* -------------------------------------------------------------
-          BASE / GHOST TEXT
-
-          Always slightly visible.
-
-          This is important because the headline should never suddenly
-          disappear while the user is scrolling backwards.
-         ------------------------------------------------------------- */}
-      <span
-        aria-hidden="true"
-        className="relative z-10"
-        style={{
-          color: 'rgba(6, 27, 87, 0.24)',
-        }}
-      >
-        {children}
-      </span>
-
-      {/* -------------------------------------------------------------
-          ACTIVE REVEAL
-
-          A single left → right wipe.
-
-          This is the main visual change from the old animation.
-         ------------------------------------------------------------- */}
-      <span
-        aria-hidden="true"
-        className="absolute inset-0 z-20"
-        style={{
-          color: '#061B57',
-
-          clipPath:
-            'inset(0 calc(100% - var(--reveal)) 0 0)',
-
-          transform:
-            'translate3d(var(--reveal-x), 0, 0)',
-
-          willChange:
-            'clip-path, transform',
-
-          textShadow:
-            '0 2px 10px rgba(255,255,255,0.28), 0 4px 20px rgba(3,21,80,0.20)',
-        }}
-      >
-        {children}
-      </span>
-
-      {/* -------------------------------------------------------------
-          MOVING SCAN EDGE
-
-          Gives the wipe a subtle "broadcast graphics / stock ticker"
-          feeling without becoming flashy.
-         ------------------------------------------------------------- */}
-      {highlight && (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 z-30"
-          style={{
-            left: 'var(--beam-x)',
-            width: '2px',
-
-            transform:
-              'translateX(-1px)',
-
-            background:
-              'linear-gradient(' +
-              '180deg,' +
-              'transparent 0%,' +
-              'rgba(255,255,255,0.05) 15%,' +
-              'rgba(255,255,255,0.95) 50%,' +
-              'rgba(255,255,255,0.05) 85%,' +
-              'transparent 100%' +
-              ')',
-
-            opacity:
-              'var(--reveal)' === '100%' ? 0 : 0.75,
-
-            filter:
-              'blur(0.2px)',
-
-            boxShadow:
-              '0 0 12px rgba(255,255,255,0.32)',
-
-            willChange:
-              'left, opacity',
-          }}
-        />
-      )}
-    </span>
-  );
+  /** 0->1 across the whole statement, drives the horizontal travel */
+  travel: number;
+  /** 0->1 during the entrance only, drives the reveal wipe */
+  reveal: number;
+  /** true while the statement occupies the stage */
+  active: boolean;
 }
 
 /**
- * Small scroll-linked atmospheric text reveal.
+ * Splits one frame range into enter / travel+hold / exit.
  *
- * This keeps a faint "ghost" version of the text in the sky while the
- * highlighted version follows scroll progress. It is deliberately subtle
- * so the factory remains visible.
+ * `enterRatio` and `exitRatio` are fractions of the range, which keeps the
+ * pacing identical regardless of how long a statement is on screen.
  */
-function CloudRevealText({
+function usePhase(
+  frame: number,
+  start: number,
+  end: number,
+  enterRatio = 0.24,
+  exitRatio = 0.2
+): Phase {
+  return useMemo(() => {
+    if (frame < start || frame > end) {
+      return { opacity: 0, travel: frame > end ? 1 : 0, reveal: 0, active: false };
+    }
+
+    const span = Math.max(1, end - start);
+    const t = clamp01((frame - start) / span);
+
+    const enterEnd = enterRatio;
+    const exitStart = 1 - exitRatio;
+
+    let opacity: number;
+    if (t < enterEnd) {
+      opacity = easeOut(t / enterEnd);
+    } else if (t > exitStart) {
+      opacity = easeOut(clamp01((1 - t) / exitRatio));
+    } else {
+      opacity = 1;
+    }
+
+    const reveal = clamp01(t / enterEnd);
+
+    return { opacity, travel: t, reveal, active: true };
+  }, [frame, start, end, enterRatio, exitRatio]);
+}
+
+/* ==========================================================================
+   REVEAL PRIMITIVE
+   A single left -> right wipe over a permanently-present ghost layer, so the
+   words never pop in or vanish while scrubbing backwards.
+   ========================================================================== */
+
+function Reveal({
   children,
-  progress,
+  reveal,
   className = '',
-  color = '#031550',
-  ghostOpacity = 0.22,
-  as: Tag = 'span',
+  tone = '#061b57',
+  ghost = 0.26,
+  glow = true,
 }: {
   children: React.ReactNode;
-  progress: number;
+  reveal: number;
   className?: string;
-  color?: string;
-  ghostOpacity?: number;
-  as?: keyof JSX.IntrinsicElements;
+  tone?: string;
+  ghost?: number;
+  glow?: boolean;
 }) {
-  const pct = Math.max(0, Math.min(1, progress)) * 100;
+  const pct = clamp01(reveal) * 100;
 
   return (
-    <Tag className={`relative inline-block ${className}`}>
-      {/* Soft white reading surface — deliberately transparent so the factory
-          and sky still remain visible. */}
-      <span
-        aria-hidden
-        className="absolute -inset-x-3 -inset-y-2 -z-10 rounded-sm"
-        style={{
-          background: `
-            linear-gradient(
-              90deg,
-              rgba(255,255,255,0) 90%,
-              rgba(255,255,255,0.72) 18%,
-              rgba(255,255,255,0.72) 82%,
-              rgba(255,255,255,0) 1%
-              rgba(255,255,255,0) 1%
-            )
-          `,
-          opacity: 0.82,
-          filter: 'blur(88px)',
-        }}
-      />
-
-      {/* Quiet ghost layer */}
-      <span
-        aria-hidden
-        className="block"
-        style={{
-          color: `rgba(3,21,80,${ghostOpacity})`,
-        }}
-      >
+    <span className={`relative inline-block ${className}`}>
+      {/* Ghost — always faintly present */}
+      <span aria-hidden className="block" style={{ color: `rgba(6,27,87,${ghost})` }}>
         {children}
       </span>
 
-      {/* Blue highlight layer. It is intentionally restrained. */}
+      {/* Wipe — the active, fully-saturated layer */}
       <span
         aria-hidden
         className="absolute inset-0 block"
         style={{
-          color,
-          opacity: 1,
-          WebkitMaskImage: `linear-gradient(
-            90deg,
-            #000 0%,
-            #000 ${Math.max(0, pct - 20)}%,
-            rgba(0,0,0,0.88) ${pct}%,
-            transparent ${Math.min(100, pct + 20)}%,
-            transparent 100%
-          )`,
-          maskImage: `linear-gradient(
-            90deg,
-            #000 0%,
-            #000 ${Math.max(0, pct - 20)}%,
-            rgba(0,0,0,0.88) ${pct}%,
-            transparent ${Math.min(100, pct + 20)}%,
-            transparent 100%
-          )`,
+          color: tone,
+          clipPath: `inset(0 ${100 - pct}% 0 0)`,
+          willChange: 'clip-path',
+          textShadow: glow
+            ? '0 2px 12px rgba(255,255,255,0.42), 0 6px 26px rgba(3,21,80,0.22)'
+            : undefined,
         }}
       >
         {children}
       </span>
 
       <span className="sr-only">{children}</span>
-    </Tag>
+    </span>
   );
 }
 
-export default function ScrollToBeginHeader({
-  scrollProgress,
-}: ScrollToBeginHeaderProps) {
-  const TOTAL_FRAMES = 335;
+/* ==========================================================================
+   STATEMENT SHELL
+   Owns the horizontal travel. Held in the upper band of the viewport on
+   desktop; recomposed as a centred stack on phones.
+   ========================================================================== */
 
-  /*
-   * Master frame position.
-   *
-   * Your existing Three.js sequence uses 335 frames, so the mapping is
-   * deliberately preserved.
-   */
-  const currentFrame = Math.min(
-    TOTAL_FRAMES,
-    Math.max(
-      1,
-      Math.round(scrollProgress * (TOTAL_FRAMES - 1)) + 1
-    )
-  );
+function Statement({
+  phase,
+  children,
+  isMobile,
+  /** How far the block travels across the viewport, in vw */
+  distance = 14,
+  /** Vertical anchor within the upper band */
+  top,
+}: {
+  phase: Phase;
+  children: React.ReactNode;
+  isMobile: boolean;
+  distance?: number;
+  top: string;
+}) {
+  // LEFT -> RIGHT journey. Starts left of its resting place, drifts right,
+  // and keeps drifting on the way out so the exit feels like continued
+  // camera motion rather than a fade in place.
+  const eased = easeInOut(phase.travel);
+  const travelX = isMobile
+    ? (eased - 0.5) * 3.2 // gentle parallax only — cannot overflow
+    : -distance * 0.5 + eased * distance;
 
-  /*
-   * Existing narrative ranges preserved from the supplied component.
-   */
-  const isIntro = currentFrame < 6;
-  const isStmt1 = currentFrame >= 6 && currentFrame <= 70;
-  const isStmt2 = currentFrame >= 75 && currentFrame <= 145;
-  const isStmt3 = currentFrame >= 150 && currentFrame <= 220;
-
-  /**
-   * Smooth frame-state helper.
-   *
-   * opacity:
-   *   controls entrance/exit
-   *
-   * progress:
-   *   drives the SplitText reveal and movement
-   */
-  const getProgressState = (
-    frame: number,
-    start: number,
-    end: number,
-    fadeLen = 14
-  ) => {
-    if (frame < start || frame > end) {
-      return { opacity: 0, progress: 0 };
-    }
-
-    let opacity = 1;
-
-    if (frame < start + fadeLen) {
-      opacity = (frame - start) / fadeLen;
-    } else if (frame > end - fadeLen) {
-      opacity = (end - frame) / fadeLen;
-    }
-
-    const progress = (frame - start) / (end - start);
-
-    return {
-      opacity: gsap.utils.clamp(0, 1, opacity),
-      progress: gsap.utils.clamp(0, 1, progress),
-    };
-  };
-
-  /*
-   * Existing timing preserved.
-   */
-  const introOpacity = isIntro
-    ? Math.max(0, 1 - (scrollProgress * TOTAL_FRAMES) / 6)
-    : 0;
-
-  const s1 = getProgressState(currentFrame, 6, 70, 20);
-  const s2 = getProgressState(currentFrame, 75, 145, 20);
-  const s3 = getProgressState(currentFrame, 150, 220, 20);
-
-  /*
-   * We keep a tiny amount of global atmosphere over the whole scene.
-   * This is intentionally NOT an opaque overlay.
-   */
-  const sceneAtmosphereOpacity = Math.max(
-    s1.opacity,
-    s2.opacity,
-    s3.opacity
-  );
+  // A touch of vertical settle on entry keeps it from feeling like a slider.
+  const settleY = (1 - easeOut(clamp01(phase.travel / 0.24))) * (isMobile ? 14 : 22);
 
   return (
     <div
-      className="
-        absolute inset-0 z-30
-        pointer-events-none
-        overflow-hidden
-        select-none
-      "
+      className="absolute inset-x-0 z-30"
+      style={{
+        top,
+        opacity: phase.opacity,
+        visibility: phase.active ? 'visible' : 'hidden',
+        transform: `translate3d(${travelX}vw, ${settleY}px, 0)`,
+        willChange: 'transform, opacity',
+      }}
     >
-      {/* ================================================================
-          CINEMATIC READABILITY LAYER
-          Factory remains visible; the gradient only protects typography.
-          ================================================================ */}
+      <div className="mx-auto w-full max-w-[1240px] px-5 sm:px-8 lg:px-12">{children}</div>
+    </div>
+  );
+}
+
+/** Small technical eyebrow used above every headline. */
+function Eyebrow({ reveal, children }: { reveal: number; children: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex items-center gap-3 sm:mb-4 sm:gap-4">
+      <span
+        className="h-px w-6 origin-left bg-[#061b57]/50 sm:w-12"
+        style={{ transform: `scaleX(${clamp01(reveal)})` }}
+      />
+      <Reveal
+        reveal={reveal}
+        ghost={0.34}
+        glow={false}
+        className="font-mono text-[9px] font-bold uppercase tracking-[0.22em] sm:text-[11px] sm:tracking-[0.32em]"
+      >
+        {children}
+      </Reveal>
+    </div>
+  );
+}
+
+export default function ScrollToBeginHeader({ scrollProgress }: ScrollToBeginHeaderProps) {
+  const { isMobile, prefersReducedMotion } = useDeviceProfile();
+
+  const TOTAL_FRAMES = 335;
+
+  const currentFrame = Math.min(
+    TOTAL_FRAMES,
+    Math.max(1, Math.round(scrollProgress * (TOTAL_FRAMES - 1)) + 1)
+  );
+
+  // Narrative ranges preserved from the original sequence timing.
+  const s1 = usePhase(currentFrame, 6, 70);
+  const s2 = usePhase(currentFrame, 75, 145);
+  const s3 = usePhase(currentFrame, 150, 220);
+
+  const introOpacity =
+    currentFrame < 6 ? Math.max(0, 1 - (scrollProgress * TOTAL_FRAMES) / 6) : 0;
+
+  const atmosphere = Math.max(s1.opacity, s2.opacity, s3.opacity);
+
+  // With reduced motion the statements are simply presented, fully revealed,
+  // with no travel — the story still reads, nothing moves.
+  const r = (v: number) => (prefersReducedMotion ? (v > 0 ? 1 : 0) : v);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 select-none overflow-hidden">
+      {/* ==================================================================
+          READABILITY LAYER
+          A soft sky-side wash only. The factory stays fully visible; this
+          exists purely so type sitting on bright cloud remains legible.
+          ================================================================== */}
       <div
         className="absolute inset-0 z-0"
         style={{
-          opacity: 0.42 + sceneAtmosphereOpacity * 0.04,
+          opacity: 0.34 + atmosphere * 0.18,
           background: `
             linear-gradient(
               180deg,
-              rgba(255,255,255,0.30) 0%,
-              rgba(255,255,255,0.10) 35%,
-              rgba(255,255,255,0.00) 62%,
-              rgba(255,255,255,0.08) 100%
+              rgba(244,246,250,0.62) 0%,
+              rgba(244,246,250,0.28) 26%,
+              rgba(244,246,250,0.00) 52%,
+              rgba(5,7,12,0.00) 74%,
+              rgba(5,7,12,0.22) 100%
             )
           `,
         }}
       />
 
-      {/* ================================================================
-          1. INTRO / BEGIN PAGE COVER
-          Kept as the original content and wording.
-          ================================================================ */}
+      {/* ==================================================================
+          1. INTRO COVER
+          ================================================================== */}
       <div
-        className="
-          absolute inset-0 z-40
-          flex flex-col items-center justify-center
-          p-6 sm:p-10
-          text-center
-          bg-white/60 dark:bg-slate-950/60
-          backdrop-blur-[2px]
-          pointer-events-auto
-        "
+        className="pointer-events-auto absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/60 p-6 text-center backdrop-blur-[2px] sm:p-10"
         style={{
           opacity: introOpacity,
           visibility: introOpacity > 0.001 ? 'visible' : 'hidden',
         }}
       >
-        <div className="max-w-3xl mx-auto flex flex-col items-center gap-6 my-auto">
+        <div className="my-auto mx-auto flex max-w-3xl flex-col items-center gap-5 sm:gap-6">
           <div className="space-y-3">
-            <span
-              className="
-                text-xs sm:text-sm
-                font-extrabold
-                uppercase
-                tracking-[0.35em]
-                text-blue-900
-                dark:text-amber-400
-              "
-            >
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.3em] text-blue-900 sm:text-sm sm:tracking-[0.35em]">
               VARAHA METALIKS PVT. LTD.
             </span>
 
-            <h1
-              className="
-                font-sans
-                text-4xl sm:text-6xl md:text-7xl
-                font-black
-                tracking-tight
-                text-slate-950
-                dark:text-white
-                leading-[1.05]
-              "
-            >
+            <h1 className="font-sans text-[clamp(2.25rem,10vw,4.5rem)] font-black leading-[1.05] tracking-tight text-slate-950 md:text-7xl">
               Varaha Metaliks
             </h1>
 
-            <div className="w-24 h-1 bg-amber-500 mx-auto rounded-full" />
+            <div className="mx-auto h-1 w-24 rounded-full bg-amber-500" />
 
-            <p
-              className="
-                font-sans
-                text-2xl sm:text-3xl md:text-4xl
-                font-bold
-                text-slate-900
-                dark:text-slate-100
-                tracking-tight
-              "
-            >
+            <p className="font-sans text-[clamp(1.15rem,5vw,2.25rem)] font-bold tracking-tight text-slate-900">
               From Iron to Infrastructure.
             </p>
           </div>
 
-          <p
-            className="
-              text-sm sm:text-base md:text-lg
-              text-slate-700 dark:text-slate-200
-              max-w-2xl
-              font-medium
-              leading-relaxed
-            "
-          >
-            Precision Ductile Iron Pipe Fittings, DI Manhole Covers, &amp;
-            Ferrous Alloy Castings.
+          <p className="max-w-2xl text-sm font-medium leading-relaxed text-slate-700 sm:text-base md:text-lg">
+            Precision Ductile Iron Pipe Fittings, DI Manhole Covers, &amp; Ferrous Alloy
+            Castings.
           </p>
 
-          <div className="mt-6 flex flex-col items-center gap-3 animate-bounce">
-            <div
-              className="
-                flex items-center gap-3
-                px-7 py-3
-                rounded-full
-                bg-slate-950 text-white
-                dark:bg-white dark:text-slate-950
-                text-xs sm:text-sm
-                font-bold
-                tracking-[0.2em]
-                uppercase
-                shadow-2xl
-                border border-white/20
-              "
-            >
+          <div className="mt-4 flex animate-bounce flex-col items-center gap-3 sm:mt-6">
+            <div className="tap-target flex items-center gap-3 rounded-full border border-white/20 bg-slate-950 px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-2xl sm:px-7 sm:text-sm">
               <span>Scroll to begin</span>
-              <ChevronDown className="w-4 h-4 text-amber-400 dark:text-blue-600" />
+              <ChevronDown className="h-4 w-4 text-amber-400" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* ================================================================
-          2. STATEMENT 1 — FOUNDING FAMILIES
-          Typography lives in the clear sky band.
-          The factory remains completely visible below it.
-          ================================================================ */}
-      <div
-        className="absolute inset-0 z-30"
-        style={{
-          opacity: s1.opacity,
-          visibility: isStmt1 ? 'visible' : 'hidden',
-        }}
-      >
-        <div
-          className="
-            absolute
-            left-[4vw]
-            top-[7vh]
-            sm:top-[8vh]
-            md:top-[9vh]
-            w-[92vw]
-            max-w-[1120px]
-          "
-          style={{
-            transform: `
-              translate3d(
-                0,
-                ${(1 - s1.progress) * 18 - 6}px,
-                0
-              )
-            `,
-          }}
+      {/* ==================================================================
+          2. STATEMENT ONE — FOUNDING FAMILIES
+          Sits highest in the sky band.
+          ================================================================== */}
+      <Statement phase={s1} isMobile={isMobile} distance={16} top={isMobile ? '9%' : '8%'}>
+        <Eyebrow reveal={r(s1.reveal)}>
+          40+ Years of Expertise · Ferrous Metal · Water · Infrastructure
+        </Eyebrow>
+
+        <Reveal
+          reveal={r(s1.reveal)}
+          ghost={0.3}
+          className="mb-1 font-sans text-xs font-normal tracking-wide sm:mb-2 sm:text-base md:text-lg"
         >
-          <div className="mb-4 sm:mb-5">
-            <CloudRevealText
-              progress={s1.progress}
-              color="#0a0227"
-              ghostOpacity={0.9}
-              className="
-                font-sans
-                text-[10px] sm:text-[11px] md:text-xs
-                font-medium
-                tracking-[0.28em]
-                sm:tracking-[0.35em]
-                uppercase
-                drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]
-              "
-            >
-              40+ Years of Expertise · Ferrous Metal · Water · Infrastructure
-            </CloudRevealText>
-          </div>
+          Guided by the
+        </Reveal>
 
-          <CloudRevealText
-            progress={s1.progress}
-            color="#0a0227"
-            ghostOpacity={0.8}
-            className="
-              font-sans
-              text-sm sm:text-base md:text-lg
-              font-normal
-              tracking-wide
-              mb-1 sm:mb-2
-              drop-shadow-[0_2px_10px_rgba(0,0,0,0.25)]
-            "
+        <h2
+          className="leading-[0.92] tracking-[-0.035em]"
+          style={{ fontFamily: "'Fraunces', ui-serif, Georgia, serif" }}
+        >
+          <Reveal
+            reveal={r(s1.reveal)}
+            ghost={0.3}
+            className="block font-medium text-[clamp(2rem,9vw,6.5rem)]"
           >
-            Guided by the
-          </CloudRevealText>
+            Mittal, Jhunjhunwala
+          </Reveal>
 
-          <h2
-            className="
-              leading-[0.9]
-              tracking-[-0.035em]
-              text-white
-            "
-            style={{
-              fontFamily: "'Fraunces', ui-serif, Georgia, serif",
-            }}
+          <Reveal
+            reveal={r(clamp01((s1.reveal - 0.12) / 0.88))}
+            ghost={0.24}
+            className="block font-normal italic text-[clamp(2rem,9vw,6.5rem)]"
           >
-            <CloudRevealText
-              progress={s1.progress}
-              color="#0a0227"
-              ghostOpacity={0.8}
-              className="
-                block
-                font-medium
-                text-[clamp(3rem,6vw,6.5rem)]
-                drop-shadow-[0_3px_16px_rgba(0,0,0,0.3)]
-              "
-            >
-              Mittal, Jhunjhunwala
-            </CloudRevealText>
+            &amp; Jaju
+          </Reveal>
+        </h2>
 
-            <CloudRevealText
-              progress={s1.progress}
-              color="#0a0227"
-              ghostOpacity={0.22}
-              className="
-                block
-                italic
-                font-normal
-                text-[clamp(3rem,6vw,6.5rem)]
-                drop-shadow-[0_3px_16px_rgba(0,0,0,0.3)]
-              "
-            >
-              &amp; Jaju
-            </CloudRevealText>
-          </h2>
-
-          <div className="mt-5 sm:mt-6 flex items-center gap-3">
-            <span
-              className="h-[1.5px] w-8 sm:w-12 bg-[#fcf9f5] origin-left"
-              style={{
-                opacity: s1.progress,
-                transform: `scaleX(${s1.progress})`,
-              }}
-            />
-
-            <CloudRevealText
-              progress={s1.progress}
-              color="#0a0227"
-              ghostOpacity={0.18}
-              className="
-                font-sans
-                text-[10px] sm:text-xs
-                font-semibold
-                tracking-[0.3em]
-                uppercase
-              "
-            >
-              Families
-            </CloudRevealText>
-          </div>
+        <div className="mt-4 flex items-center gap-3 sm:mt-6">
+          <span
+            className="h-[1.5px] w-8 origin-left bg-[#061b57]/60 sm:w-12"
+            style={{ transform: `scaleX(${clamp01(r(s1.reveal))})` }}
+          />
+          <Reveal
+            reveal={r(s1.reveal)}
+            ghost={0.24}
+            glow={false}
+            className="font-mono text-[9px] font-semibold uppercase tracking-[0.28em] sm:text-xs"
+          >
+            Families
+          </Reveal>
         </div>
-      </div>
+      </Statement>
 
-      {/* ================================================================
-          3. STATEMENT 2 — 7,200 METRIC TONS
-          Lower editorial composition.
-          The headline rises from the factory floor.
-          ================================================================ */}
-      <div
-        className="absolute inset-0 z-30"
-        style={{
-          opacity: s2.opacity,
-          visibility: isStmt2 ? 'visible' : 'hidden',
-        }}
-      >
+      {/* ==================================================================
+          3. STATEMENT TWO — ANNUAL CAPACITY
+          ================================================================== */}
+      <Statement phase={s2} isMobile={isMobile} distance={13} top={isMobile ? '10%' : '9%'}>
+        <Eyebrow reveal={r(s2.reveal)}>Prominent Casting Manufacturer in India</Eyebrow>
+
+        <h2 className="max-w-[1080px] font-sans text-[clamp(2.4rem,9.5vw,7.2rem)] font-black leading-[0.88] tracking-[-0.05em]">
+          <Reveal reveal={r(s2.reveal)} ghost={0.28}>
+            7,200 Metric Tons
+          </Reveal>
+          <br />
+          <Reveal reveal={r(clamp01((s2.reveal - 0.14) / 0.86))} ghost={0.22}>
+            Annual Capacity
+          </Reveal>
+        </h2>
+
         <div
-          className="
-            absolute
-            inset-x-0
-            bottom-0
-            px-6
-            pb-[7vh]
-            sm:px-12
-            sm:pb-[8vh]
-            md:px-16
-            lg:px-[5vw]
-          "
-          style={{
-            transform: `
-              translate3d(
-                0,
-                ${(1 - s2.progress) * 45}px,
-                0
-              )
-              scale(${0.965 + s2.progress * 0.035})
-            `,
-            transformOrigin: 'left bottom',
-          }}
+          className="mt-4 flex items-start gap-4 sm:mt-6 sm:items-center sm:gap-8"
+          style={{ opacity: clamp01(r(s2.reveal) * 1.3) }}
         >
-          <div
-            className="
-              mb-4
-              flex items-center gap-4
-              font-mono
-              text-[10px] sm:text-xs
-              font-bold
-              tracking-[0.24em]
-              sm:tracking-[0.3em]
-              uppercase
-            "
-          >
-            <span className="h-px w-8 sm:w-12 bg-[#031550]/55" />
-
-            <span className="text-[#031550]/80 drop-shadow-[0_2px_8px_rgba(255,255,255,0.8)]">
-              PROMINENT CASTING MANUFACTURER IN INDIA
-            </span>
-          </div>
-
-          <h2
-            className="
-              relative
-              max-w-[1080px]
-              font-sans
-              text-[clamp(3.4rem,7.2vw,7.8rem)]
-              font-black
-              tracking-[-0.055em]
-              leading-[0.86]
-            "
-            style={{
-              textRendering: 'geometricPrecision',
-            }}
-          >
-            <SplitReveal progress={s2.progress}>
-              7,200 Metric Tons
-            </SplitReveal>
-
-            <br />
-
-            <SplitReveal
-              progress={Math.max(0, s2.progress - 0.08) / 0.92}
-              className="text-[#031550]"
-            >
-              Annual Capacity
-            </SplitReveal>
-          </h2>
-
-          <div
-            className="mt-5 flex items-start sm:items-center gap-8"
-            style={{
-              opacity: gsap.utils.clamp(0, 1, s2.progress * 1.35),
-            }}
-          >
-            <span className="hidden sm:block h-px w-10 bg-[#031550]/45 shrink-0" />
-
-            <p
-              className="
-                max-w-2xl
-                text-xs sm:text-sm md:text-base
-                font-medium
-                text-[#031550]/78
-                uppercase
-                tracking-[0.12em]
-                sm:tracking-[0.16em]
-                leading-relaxed
-                drop-shadow-[0_2px_10px_rgba(0,0,0,0.75)]
-              "
-            >
-              FERROUS METAL, WATER, INFRA &amp; OTHER DIVERSE SECTORS
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ================================================================
-          4. STATEMENT 3 — MOULDING FACILITIES
-          Technical/industrial treatment while preserving original copy.
-          ================================================================ */}
-      <div
-        className="absolute inset-0 z-30"
-        style={{
-          opacity: s3.opacity,
-          visibility: isStmt3 ? 'visible' : 'hidden',
-        }}
-      >
-        <div
-          className="
-            absolute
-            inset-x-0
-            bottom-0
-            px-6
-            pb-[7vh]
-            sm:px-12
-            sm:pb-[8vh]
-            md:px-16
-            lg:px-[5vw]
-          "
-          style={{
-            transform: `
-              translate3d(
-                0,
-                ${(1 - s3.progress) * 45}px,
-                0
-              )
-              scale(${0.965 + s3.progress * 0.035})
-            `,
-            transformOrigin: 'left bottom',
-          }}
-        >
-          <div
-            className="
-              mb-4
-              flex items-center gap-4
-              font-mono
-              text-[10px] sm:text-xs
-              font-bold
-              tracking-[0.2em]
-              sm:tracking-[0.3em]
-              uppercase
-            "
-          >
-            <span className="h-px w-8 sm:w-12 bg-white/60" />
-
-            <span className="text-[#031550]/80 drop-shadow-[0_2px_8px_rgba(255,255,255,0.8)]">
-              BIS and ISO certified | Upholding Strict Quality Standards
-            </span>
-          </div>
-
-          <h2
-            className="
-              max-w-[1080px]
-              font-sans
-              text-[clamp(3rem,6.8vw,7.2rem)]
-              font-extrabold
-              text-white
-              tracking-[-0.045em]
-              leading-[0.88]
-              drop-shadow-[0_5px_24px_rgba(0,0,0,0.7)]
-            "
-          >
-            <SplitReveal progress={s3.progress}>
-              Machine &amp; Hand Moulding Facilities
-            </SplitReveal>
-          </h2>
-
-          <p
-            className="
-              mt-5
-              max-w-3xl
-              text-sm sm:text-lg md:text-xl
-              font-medium
-              text-[#031550]/80
-              leading-relaxed
-              drop-shadow-[0_3px_14px_rgba(0,0,0,0.75)]
-            "
-            style={{
-              opacity: gsap.utils.clamp(0, 1, (s3.progress - 0.18) / 0.5),
-              transform: `
-                translateY(
-                  ${(1 - gsap.utils.clamp(0, 1, (s3.progress - 0.18) / 0.82)) * 18}px
-                )
-              `,
-            }}
-          >
-            Machine moulding featuring 450 and 900 ARPA and hand moulding
-            facilities, capable of casting single pieces weighing up to 1.5
-            metric tons.
+          <span className="hidden h-px w-10 shrink-0 bg-[#061b57]/45 sm:block" />
+          <p className="max-w-2xl text-[10px] font-semibold uppercase leading-relaxed tracking-[0.14em] text-[#061b57]/80 sm:text-sm sm:tracking-[0.16em] md:text-base">
+            Ferrous Metal, Water, Infra &amp; Other Diverse Sectors
           </p>
         </div>
-      </div>
+      </Statement>
 
-      {/* ================================================================
-          EDGE VIGNETTE
-          Very subtle cinematic framing. Does not hide the factory.
-          ================================================================ */}
+      {/* ==================================================================
+          4. STATEMENT THREE — MOULDING FACILITIES
+          ================================================================== */}
+      <Statement phase={s3} isMobile={isMobile} distance={11} top={isMobile ? '10%' : '9%'}>
+        <Eyebrow reveal={r(s3.reveal)}>
+          BIS and ISO Certified · Strict Quality Standards
+        </Eyebrow>
+
+        <h2 className="max-w-[1080px] font-sans text-[clamp(2.2rem,8.6vw,6.8rem)] font-extrabold leading-[0.9] tracking-[-0.045em]">
+          <Reveal reveal={r(s3.reveal)} ghost={0.26}>
+            Machine &amp; Hand Moulding
+          </Reveal>
+          <br />
+          <Reveal reveal={r(clamp01((s3.reveal - 0.16) / 0.84))} ghost={0.22}>
+            Facilities
+          </Reveal>
+        </h2>
+
+        <p
+          className="mt-4 max-w-3xl text-xs font-medium leading-relaxed text-[#061b57]/80 sm:mt-6 sm:text-lg md:text-xl"
+          style={{
+            opacity: clamp01((r(s3.reveal) - 0.25) / 0.5),
+          }}
+        >
+          Machine moulding featuring 450 and 900 ARPA and hand moulding facilities,
+          capable of casting single pieces weighing up to 1.5 metric tons.
+        </p>
+      </Statement>
+
+      {/* ==================================================================
+          EDGE VIGNETTE — cinematic framing, never hides the factory
+          ================================================================== */}
       <div
-        className="absolute inset-0 z-50 pointer-events-none"
+        className="pointer-events-none absolute inset-0 z-50"
         style={{
-          background: `
-            radial-gradient(
-              ellipse at center,
-              transparent 52%,
-              rgba(255,255,255,0.10) 100%
-            )
-          `,
+          background:
+            'radial-gradient(ellipse at center, transparent 54%, rgba(5,7,12,0.16) 100%)',
         }}
       />
     </div>
