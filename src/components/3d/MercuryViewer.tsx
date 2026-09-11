@@ -160,8 +160,8 @@ export default function MercuryViewer({
     dirLight2.position.set(-6, 3, -4);
     scene.add(dirLight2);
 
-    // Rim Light for crisp edge definition
-    const dirLight3 = new THREE.DirectionalLight(0xffc875, .65);
+    // Rim Light — warm burnished metal edge
+    const dirLight3 = new THREE.DirectionalLight(0xd8a06a, 0.75);
     dirLight3.position.set(-3, 4, -6);
     scene.add(dirLight3);
 
@@ -170,11 +170,11 @@ export default function MercuryViewer({
     topLight.position.set(0, 8, 1);
     scene.add(topLight);
 
-    // Warm separation light — makes the DI fitting stand out from the factory
+    // Warm copper separation light — makes the DI fitting stand out
     const productRimLight = new THREE.PointLight(
-      0xffb45c,
-      2.0,
-      8,
+      0xc2764a,
+      1.6,
+      9,
       2
     );
 
@@ -225,12 +225,13 @@ export default function MercuryViewer({
     scene.add(modelGroup);
     modelGroupRef.current = modelGroup;
 
-    // 6A. Invisible floor used only to receive the product shadow
+    // 6A. Invisible floor used only to receive the product shadow —
+    // a soft engineered grounding rather than a floating object.
     const shadowFloor = new THREE.Mesh(
-      new THREE.PlaneGeometry(4, 4),
+      new THREE.PlaneGeometry(7, 7),
       new THREE.ShadowMaterial({
-        color: 0x000000,
-        opacity: 0.22,
+        color: 0x101214,
+        opacity: 0.3,
       })
     );
 
@@ -359,12 +360,13 @@ export default function MercuryViewer({
 
               const diMaterial = applyDiMaterial(normalMapRef.current);
 
-              // Slightly darker foundry-grade DI iron
-              diMaterial.color.setHex(0x34383a);
-              diMaterial.color.setHex(0x34383a);
-              diMaterial.metalness = 0.85;
-              diMaterial.roughness = 0.62;
-              diMaterial.envMapIntensity = 0.65;
+              // Foundry-grade ductile iron — warm graphite, catches light
+              diMaterial.color.setHex(0x353638);
+              diMaterial.metalness = 0.92;
+              diMaterial.roughness = 0.52;
+              diMaterial.envMapIntensity = 0.95;
+              diMaterial.clearcoat = 0.1;
+              diMaterial.clearcoatRoughness = 0.7;
 
               mesh.material = diMaterial;
 
@@ -458,64 +460,63 @@ export default function MercuryViewer({
       {/* WebGL Canvas: Direct Transparent Rendering */}
       <div ref={mountRef} className="w-full h-full flex-1 relative cursor-grab active:cursor-grabbing" />
 
-      {/* ================= 3D INTERACTIVE HINT BADGE (CLEAR USER HINT) ================= */}
+      {/* ================= QUIET 3D CONTROL CLUSTER ================= */}
       {!loading && !loadError && (
-        <div className="absolute top-4 right-4 sm:top-5 sm:right-6 z-20 pointer-events-auto flex items-center gap-2">
-          {/* Main 360° Interactive Hint Pill */}
-          <div className="bg-slate-950/85 backdrop-blur-md text-white border border-slate-700/80 px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2 text-xs">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
-            <Move3d className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span className="font-mono font-bold text-[11px] tracking-wide uppercase text-amber-300">
-              360° 3D MODEL
-            </span>
-            <span className="text-slate-400 text-[10px] hidden md:inline font-sans">
-              • Drag to rotate • Scroll to zoom
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-5 z-20 pointer-events-auto flex items-center gap-1.5">
+          {/* Restrained 360 hint */}
+          <div className="hidden md:flex bg-ivory/82 backdrop-blur-md border border-ink/10 pl-3 pr-3.5 py-1.5 rounded-full shadow-[0_8px_24px_-12px_rgba(21,23,26,0.5)] items-center gap-2">
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-copper shrink-0"
+              style={{ animation: 'vm-pulse-dot 2.4s ease-in-out infinite' }}
+            />
+            <Move3d className="w-3 h-3 text-copper shrink-0" strokeWidth={1.6} />
+            <span className="font-mono font-medium text-[10px] tracking-[0.18em] uppercase text-ink/65">
+              360° 3D Model · Drag to rotate
             </span>
           </div>
 
-          {/* Quick Reset Camera Action Button */}
+          {/* Reset camera */}
           <button
             onClick={handleResetCamera}
-            className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-800 hover:text-slate-950 border border-slate-200 shadow-sm flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+            className="w-8 h-8 rounded-full bg-ivory/85 backdrop-blur-md hover:bg-ivory text-ink/60 hover:text-ink border border-ink/10 flex items-center justify-center transition-all cursor-pointer"
             title="Reset 3D Camera View"
             aria-label="Reset Camera"
           >
-            <RefreshCcw className="w-3.5 h-3.5" />
+            <RefreshCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
           </button>
 
-          {/* Toggle Auto Turntable Rotation */}
+          {/* Toggle turntable */}
           <button
             onClick={() => setAutoRotate(!autoRotate)}
-            className={`w-8 h-8 rounded-full border shadow-sm flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+            className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all cursor-pointer backdrop-blur-md ${
               autoRotate
-                ? 'bg-amber-500 text-slate-950 border-amber-600'
-                : 'bg-white/90 text-slate-700 border-slate-200 hover:bg-white'
+                ? 'bg-copper text-ivory border-copper'
+                : 'bg-ivory/85 text-ink/60 border-ink/10 hover:text-ink hover:bg-ivory'
             }`}
             title={autoRotate ? 'Pause 360° auto-spin' : 'Start 360° auto-spin'}
             aria-label="Toggle Auto-Rotation"
           >
-            <RotateCw className="w-3.5 h-3.5" />
+            <RotateCw className="w-3.5 h-3.5" strokeWidth={1.5} />
           </button>
         </div>
       )}
 
-      {/* Industrial Skeleton / Spinner Loader */}
+      {/* Industrial loader */}
       {loading && (
-        <div className="absolute inset-0 z-30 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center pointer-events-none transition-opacity duration-300">
-          <div className="relative w-16 h-16 flex items-center justify-center mb-4">
-            {/* Outer spinning dash ring */}
-            <div className="absolute inset-0 rounded-full border-2 border-dashed border-slate-300 border-t-amber-500 animate-spin" style={{ animationDuration: '3s' }} />
-            {/* Inner reverse spinner */}
-            <div className="w-10 h-10 rounded-full border-2 border-slate-200 border-b-slate-900 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
-            {/* Center foundry core pulse */}
-            <div className="w-3 h-3 rounded-full bg-amber-500 animate-ping" />
+        <div className="absolute inset-0 z-30 bg-ivory/70 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center pointer-events-none transition-opacity duration-300">
+          <div className="relative w-14 h-14 flex items-center justify-center mb-4">
+            <div
+              className="absolute inset-0 rounded-full border border-dashed border-ink/20 border-t-copper vm-spin-slow"
+              style={{ animationDuration: '3s' }}
+            />
+            <div className="w-2 h-2 rotate-45 bg-copper" />
           </div>
 
-          <div className="space-y-1">
-            <p className="text-slate-950 font-mono text-[11px] tracking-widest uppercase font-bold">
-              RENDERING 3D SPECIFICATION
+          <div className="space-y-1.5">
+            <p className="text-ink font-mono text-[10px] tracking-[0.26em] uppercase font-medium">
+              Rendering 3D Specification
             </p>
-            <p className="text-slate-500 font-mono text-[9px] tracking-wider uppercase font-semibold">
+            <p className="text-steel font-mono text-[9px] tracking-[0.2em] uppercase font-medium">
               {productName}
             </p>
           </div>
@@ -524,17 +525,17 @@ export default function MercuryViewer({
 
       {/* Error Fallback */}
       {loadError && (
-        <div className="absolute inset-0 z-30 bg-white/90 flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2">
+        <div className="absolute inset-0 z-30 bg-ivory/92 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-10 h-10 rounded-full border border-copper/30 text-copper-deep flex items-center justify-center mb-3">
             <span className="font-mono font-bold text-base">!</span>
           </div>
-          <p className="text-slate-900 font-bold text-xs mb-1">{loadError}</p>
+          <p className="text-ink font-semibold text-xs mb-1">{loadError}</p>
           <button
             onClick={() => {
               setLoading(true);
               setLoadError(null);
             }}
-            className="mt-2 text-xs font-mono font-bold px-3 py-1 bg-slate-900 text-white rounded-lg hover:bg-amber-500 hover:text-slate-950 transition-colors"
+            className="mt-2 text-[11px] font-mono font-semibold tracking-widest uppercase px-4 py-2 bg-graphite text-ivory rounded-full hover:bg-copper transition-colors"
           >
             Retry Loading
           </button>
