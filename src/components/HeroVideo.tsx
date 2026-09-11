@@ -151,55 +151,62 @@ export default function HeroVideo({ setActiveTab, onVideoLoaded, onAnimationFini
     };
   }, [onVideoLoaded]);
 
-  // Smooth white screen overlay transition calculation towards end of sequence
-  const whiteOverlayOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.94) / 0.05));
+  // The film itself travels LIGHT → INDUSTRIAL DARK → FIRE → FLASH.
+  // Mirror that onto the global theme once the foundry interior begins.
+  useEffect(() => {
+    document.documentElement.dataset.uiTheme =
+      scrollProgress > 0.52 ? 'dark' : 'light';
+  }, [scrollProgress > 0.52]);
 
   return (
-    <div 
+    <div
       ref={containerRef}
       id="hero-cinematic-scroll-container"
-      className="relative w-full h-[360vh] bg-slate-950"
+      data-theme={scrollProgress > 0.52 ? 'dark' : 'light'}
+      className="relative w-full h-[360vh] bg-graphite-2"
     >
-      {/* 
-        Apple-Style Premium Preloader Overlay
-        Keeps layout locked until key priority frames are loaded.
+      {/*
+        Editorial preloader — graphite end-card until priority frames exist.
       */}
       {!fadeLoader && (
-        <div 
-          className={`fixed inset-0 bg-slate-950 z-[9999] flex flex-col items-center justify-center transition-all duration-700 ease-out ${
+        <div
+          className={`fixed inset-0 bg-graphite-2 z-[9999] flex flex-col items-center justify-center transition-opacity duration-700 ease-out ${
             priorityLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
         >
-          <div className="flex flex-col items-center space-y-6 max-w-sm px-6 text-center">
-            {/* Minimalist metal casting animation symbol */}
-            <div className="relative w-16 h-16 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-2 border-slate-800/80" />
-              <div 
-                className="absolute inset-0 rounded-full border-2 border-t-amber-500 border-r-amber-500 animate-spin"
-                style={{ animationDuration: '1.2s' }}
+          <div className="flex flex-col items-center gap-7 max-w-sm px-6 text-center">
+            {/* Slow rotating industrial ring */}
+            <div className="relative w-14 h-14 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border border-ivory/15" />
+              <div
+                className="absolute inset-0 rounded-full border border-transparent border-t-copper vm-spin-slow"
               />
+              <div className="w-1.5 h-1.5 rotate-45 bg-champagne" />
             </div>
 
-            <div className="space-y-2">
-              <h3 className="text-white font-display text-lg font-bold tracking-[0.2em] uppercase">
-                VARAHA METALIKS
+            <div className="space-y-3">
+              <h3 className="font-sans font-bold text-ivory text-[13px] tracking-[0.32em] uppercase">
+                Varaha Metaliks
               </h3>
-              <p className="text-slate-400 font-sans text-xs tracking-widest uppercase">
-                INITIALIZING CINEMATIC SCRUB ENGINE
+              <p className="label-tech text-steel">
+                Initializing Cinematic Scrub Engine
               </p>
             </div>
 
-            {/* Percentage Display */}
-            <div className="text-amber-500 font-mono text-3xl font-extrabold tracking-wide">
-              {loadingProgress}%
-            </div>
-
-            {/* Premium progressive load bar */}
-            <div className="w-48 h-[2px] bg-slate-800/80 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-amber-500 transition-all duration-300 ease-out"
-                style={{ width: `${loadingProgress}%` }}
-              />
+            {/* Percentage + hairline load rule */}
+            <div className="w-56">
+              <div className="flex items-baseline justify-center mb-3">
+                <span className="font-display text-3xl font-light text-champagne tabular-nums">
+                  {loadingProgress}
+                  <span className="text-base text-steel">%</span>
+                </span>
+              </div>
+              <div className="h-px bg-ivory/10 overflow-hidden">
+                <div
+                  className="h-full bg-copper transition-all duration-300 ease-out"
+                  style={{ width: `${loadingProgress}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>

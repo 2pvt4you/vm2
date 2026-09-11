@@ -1,834 +1,367 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import gsap from 'gsap';
-import { SplitText } from 'gsap/SplitText';
-
-gsap.registerPlugin(SplitText);
+import { TONE } from './ui/primitives';
 
 interface ScrollToBeginHeaderProps {
   scrollProgress: number;
 }
 
-/**
- * Final cinematic text overlay.
- *
- * IMPORTANT:
- * - The parent Three.js section should remain the single owner of Lenis/
- *   ScrollTrigger/scrollProgress.
- * - This component only consumes scrollProgress.
- * - All three statements stay mounted so SplitText can safely work with them.
- * - The factory/video remains visible underneath the typography.
- */
-
-type StatementProps = {
-  progress: number;
-  opacity: number;
-  children: React.ReactNode;
-  className?: string;
-};
-
-function SplitReveal({
+/* ================================================================
+   WipeText — progress-driven editorial wipe.
+   A quiet ghost layer stays legible while scrubbing backwards;
+   the active layer wipes left → right with a copper edge.
+   ================================================================ */
+function WipeText({
   progress,
   children,
   className = '',
-  highlight = true,
+  activeColor,
+  ghostOpacity = 0.16,
+  edgeColor = TONE.copper,
 }: {
   progress: number;
   children: React.ReactNode;
   className?: string;
-  highlight?: boolean;
+  activeColor: string;
+  ghostOpacity?: number;
+  edgeColor?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const smoothProgress = useRef(0);
-  const targetProgress = useRef(0);
+  const smooth = useRef(0);
+  const target = useRef(0);
 
   useLayoutEffect(() => {
-    if (!ref.current) return;
-
-    const ctx = gsap.context(() => {
-      const ticker = () => {
-        /*
-         * Smooth the scroll-driven progress.
-         *
-         * 0.10 gives us a much more responsive movement than the
-         * previous 0.075 while still preventing jitter.
-         */
-        smoothProgress.current +=
-          (targetProgress.current - smoothProgress.current) * 0.10;
-
-        const p = gsap.utils.clamp(0, 1, smoothProgress.current);
-
-        /*
-         * Left → right information reveal.
-         *
-         * Unlike the previous character-by-character vertical reveal,
-         * the complete phrase behaves as one visual object.
-         */
-        const revealPercent = p * 100;
-
-        if (!ref.current) return;
-
-        gsap.set(ref.current, {
-          '--reveal': `${revealPercent}%`,
-          '--reveal-x': `${-18 + p * 18}px`,
-          '--beam-x': `${revealPercent}%`,
-        });
-      };
-
-      gsap.ticker.add(ticker);
-
-      return () => {
-        gsap.ticker.remove(ticker);
-      };
-    }, ref);
-
-    return () => ctx.revert();
+    const ticker = () => {
+      smooth.current += (target.current - smooth.current) * 0.1;
+      const p = gsap.utils.clamp(0, 1, smooth.current);
+      if (ref.current) {
+        ref.current.style.setProperty('--r', `${p * 100}%`);
+      }
+    };
+    gsap.ticker.add(ticker);
+    return () => gsap.ticker.remove(ticker);
   }, []);
 
   useLayoutEffect(() => {
-    targetProgress.current = gsap.utils.clamp(0, 1, progress);
+    target.current = gsap.utils.clamp(0, 1, progress);
   }, [progress]);
 
   return (
     <span
       ref={ref}
       className={`relative inline-block ${className}`}
-      style={
-        {
-          color: '#061B57',
-          '--reveal': '0%',
-          '--reveal-x': '-18px',
-          '--beam-x': '0%',
-        } as React.CSSProperties
-      }
+      style={{ ['--r' as any]: '0%' }}
     >
-      {/* -------------------------------------------------------------
-          BASE / GHOST TEXT
-
-          Always slightly visible.
-
-          This is important because the headline should never suddenly
-          disappear while the user is scrolling backwards.
-         ------------------------------------------------------------- */}
+      <span aria-hidden className="relative" style={{ color: activeColor, opacity: ghostOpacity }}>
+        {children}
+      </span>
       <span
-        aria-hidden="true"
-        className="relative z-10"
+        aria-hidden
+        className="absolute inset-0"
         style={{
-          color: 'rgba(6, 27, 87, 0.24)',
+          color: activeColor,
+          clipPath: 'inset(0 calc(100% - var(--r)) 0 0)',
         }}
       >
         {children}
       </span>
-
-      {/* -------------------------------------------------------------
-          ACTIVE REVEAL
-
-          A single left → right wipe.
-
-          This is the main visual change from the old animation.
-         ------------------------------------------------------------- */}
       <span
-        aria-hidden="true"
-        className="absolute inset-0 z-20"
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 w-px"
         style={{
-          color: '#061B57',
-
-          clipPath:
-            'inset(0 calc(100% - var(--reveal)) 0 0)',
-
-          transform:
-            'translate3d(var(--reveal-x), 0, 0)',
-
-          willChange:
-            'clip-path, transform',
-
-          textShadow:
-            '0 2px 10px rgba(255,255,255,0.28), 0 4px 20px rgba(3,21,80,0.20)',
+          left: 'var(--r)',
+          background: `linear-gradient(180deg, transparent, ${edgeColor}, transparent)`,
+          opacity: progress > 0.02 && progress < 0.98 ? 0.9 : 0,
+          transition: 'opacity 0.3s ease',
         }}
-      >
-        {children}
-      </span>
-
-      {/* -------------------------------------------------------------
-          MOVING SCAN EDGE
-
-          Gives the wipe a subtle "broadcast graphics / stock ticker"
-          feeling without becoming flashy.
-         ------------------------------------------------------------- */}
-      {highlight && (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 z-30"
-          style={{
-            left: 'var(--beam-x)',
-            width: '2px',
-
-            transform:
-              'translateX(-1px)',
-
-            background:
-              'linear-gradient(' +
-              '180deg,' +
-              'transparent 0%,' +
-              'rgba(255,255,255,0.05) 15%,' +
-              'rgba(255,255,255,0.95) 50%,' +
-              'rgba(255,255,255,0.05) 85%,' +
-              'transparent 100%' +
-              ')',
-
-            opacity:
-              'var(--reveal)' === '100%' ? 0 : 0.75,
-
-            filter:
-              'blur(0.2px)',
-
-            boxShadow:
-              '0 0 12px rgba(255,255,255,0.32)',
-
-            willChange:
-              'left, opacity',
-          }}
-        />
-      )}
+      />
     </span>
   );
 }
 
-/**
- * Small scroll-linked atmospheric text reveal.
- *
- * This keeps a faint "ghost" version of the text in the sky while the
- * highlighted version follows scroll progress. It is deliberately subtle
- * so the factory remains visible.
- */
-function CloudRevealText({
-  children,
-  progress,
-  className = '',
-  color = '#031550',
-  ghostOpacity = 0.22,
-  as: Tag = 'span',
-}: {
-  children: React.ReactNode;
-  progress: number;
-  className?: string;
-  color?: string;
-  ghostOpacity?: number;
-  as?: keyof JSX.IntrinsicElements;
-}) {
-  const pct = Math.max(0, Math.min(1, progress)) * 100;
-
-  return (
-    <Tag className={`relative inline-block ${className}`}>
-      {/* Soft white reading surface — deliberately transparent so the factory
-          and sky still remain visible. */}
-      <span
-        aria-hidden
-        className="absolute -inset-x-3 -inset-y-2 -z-10 rounded-sm"
-        style={{
-          background: `
-            linear-gradient(
-              90deg,
-              rgba(255,255,255,0) 90%,
-              rgba(255,255,255,0.72) 18%,
-              rgba(255,255,255,0.72) 82%,
-              rgba(255,255,255,0) 1%
-              rgba(255,255,255,0) 1%
-            )
-          `,
-          opacity: 0.82,
-          filter: 'blur(88px)',
-        }}
-      />
-
-      {/* Quiet ghost layer */}
-      <span
-        aria-hidden
-        className="block"
-        style={{
-          color: `rgba(3,21,80,${ghostOpacity})`,
-        }}
-      >
-        {children}
-      </span>
-
-      {/* Blue highlight layer. It is intentionally restrained. */}
-      <span
-        aria-hidden
-        className="absolute inset-0 block"
-        style={{
-          color,
-          opacity: 1,
-          WebkitMaskImage: `linear-gradient(
-            90deg,
-            #000 0%,
-            #000 ${Math.max(0, pct - 20)}%,
-            rgba(0,0,0,0.88) ${pct}%,
-            transparent ${Math.min(100, pct + 20)}%,
-            transparent 100%
-          )`,
-          maskImage: `linear-gradient(
-            90deg,
-            #000 0%,
-            #000 ${Math.max(0, pct - 20)}%,
-            rgba(0,0,0,0.88) ${pct}%,
-            transparent ${Math.min(100, pct + 20)}%,
-            transparent 100%
-          )`,
-        }}
-      >
-        {children}
-      </span>
-
-      <span className="sr-only">{children}</span>
-    </Tag>
-  );
+/* Frame-window fade math, preserved from original narrative. */
+function getProgressState(frame: number, start: number, end: number, fadeLen = 14) {
+  if (frame < start || frame > end) return { opacity: 0, progress: 0 };
+  let opacity = 1;
+  if (frame < start + fadeLen) opacity = (frame - start) / fadeLen;
+  else if (frame > end - fadeLen) opacity = (end - frame) / fadeLen;
+  return {
+    opacity: gsap.utils.clamp(0, 1, opacity),
+    progress: gsap.utils.clamp(0, 1, (frame - start) / (end - start)),
+  };
 }
 
-export default function ScrollToBeginHeader({
-  scrollProgress,
-}: ScrollToBeginHeaderProps) {
+export default function ScrollToBeginHeader({ scrollProgress }: ScrollToBeginHeaderProps) {
   const TOTAL_FRAMES = 335;
-
-  /*
-   * Master frame position.
-   *
-   * Your existing Three.js sequence uses 335 frames, so the mapping is
-   * deliberately preserved.
-   */
   const currentFrame = Math.min(
     TOTAL_FRAMES,
-    Math.max(
-      1,
-      Math.round(scrollProgress * (TOTAL_FRAMES - 1)) + 1
-    )
+    Math.max(1, Math.round(scrollProgress * (TOTAL_FRAMES - 1)) + 1)
   );
 
-  /*
-   * Existing narrative ranges preserved from the supplied component.
-   */
   const isIntro = currentFrame < 6;
   const isStmt1 = currentFrame >= 6 && currentFrame <= 70;
   const isStmt2 = currentFrame >= 75 && currentFrame <= 145;
   const isStmt3 = currentFrame >= 150 && currentFrame <= 220;
 
-  /**
-   * Smooth frame-state helper.
-   *
-   * opacity:
-   *   controls entrance/exit
-   *
-   * progress:
-   *   drives the SplitText reveal and movement
-   */
-  const getProgressState = (
-    frame: number,
-    start: number,
-    end: number,
-    fadeLen = 14
-  ) => {
-    if (frame < start || frame > end) {
-      return { opacity: 0, progress: 0 };
-    }
-
-    let opacity = 1;
-
-    if (frame < start + fadeLen) {
-      opacity = (frame - start) / fadeLen;
-    } else if (frame > end - fadeLen) {
-      opacity = (end - frame) / fadeLen;
-    }
-
-    const progress = (frame - start) / (end - start);
-
-    return {
-      opacity: gsap.utils.clamp(0, 1, opacity),
-      progress: gsap.utils.clamp(0, 1, progress),
-    };
-  };
-
-  /*
-   * Existing timing preserved.
-   */
   const introOpacity = isIntro
     ? Math.max(0, 1 - (scrollProgress * TOTAL_FRAMES) / 6)
     : 0;
 
-  const s1 = getProgressState(currentFrame, 6, 70, 20);
-  const s2 = getProgressState(currentFrame, 75, 145, 20);
-  const s3 = getProgressState(currentFrame, 150, 220, 20);
+  const s1 = getProgressState(currentFrame, 6, 70, 18);
+  const s2 = getProgressState(currentFrame, 75, 145, 18);
+  const s3 = getProgressState(currentFrame, 150, 220, 18);
 
-  /*
-   * We keep a tiny amount of global atmosphere over the whole scene.
-   * This is intentionally NOT an opaque overlay.
-   */
-  const sceneAtmosphereOpacity = Math.max(
-    s1.opacity,
-    s2.opacity,
-    s3.opacity
-  );
+  /* Scrims brighten/darken deliberately with the film's exposure. */
+  const scrimDark = Math.max(s2.opacity * 0.55, s3.opacity);
 
   return (
-    <div
-      className="
-        absolute inset-0 z-30
-        pointer-events-none
-        overflow-hidden
-        select-none
-      "
-    >
-      {/* ================================================================
-          CINEMATIC READABILITY LAYER
-          Factory remains visible; the gradient only protects typography.
-          ================================================================ */}
+    <div className="absolute inset-0 z-30 pointer-events-none overflow-hidden select-none">
+      {/* ======== Cinematic legibility scrims ======== */}
+      {/* Top sky softening for intro + statement 1 (light film) */}
       <div
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 transition-opacity duration-300"
         style={{
-          opacity: 0.42 + sceneAtmosphereOpacity * 0.04,
-          background: `
-            linear-gradient(
-              180deg,
-              rgba(255,255,255,0.30) 0%,
-              rgba(255,255,255,0.10) 35%,
-              rgba(255,255,255,0.00) 62%,
-              rgba(255,255,255,0.08) 100%
-            )
-          `,
+          opacity: Math.max(introOpacity * 0.9, s1.opacity * 0.5),
+          background:
+            'linear-gradient(180deg, rgba(244,241,234,0.55) 0%, rgba(244,241,234,0.18) 26%, rgba(244,241,234,0) 52%)',
+        }}
+      />
+      {/* Bottom graphite scrim — begins the LIGHT → DARK narrative */}
+      <div
+        className="absolute inset-0"
+        style={{
+          opacity: scrimDark,
+          background:
+            'linear-gradient(180deg, rgba(29,32,34,0) 32%, rgba(29,32,34,0.28) 62%, rgba(20,22,24,0.82) 100%)',
         }}
       />
 
       {/* ================================================================
-          1. INTRO / BEGIN PAGE COVER
-          Kept as the original content and wording.
+          INTRO — editorial cover over the aerial establishing shot
           ================================================================ */}
       <div
-        className="
-          absolute inset-0 z-40
-          flex flex-col items-center justify-center
-          p-6 sm:p-10
-          text-center
-          bg-white/60 dark:bg-slate-950/60
-          backdrop-blur-[2px]
-          pointer-events-auto
-        "
+        className="absolute inset-0 flex flex-col"
         style={{
           opacity: introOpacity,
           visibility: introOpacity > 0.001 ? 'visible' : 'hidden',
         }}
       >
-        <div className="max-w-3xl mx-auto flex flex-col items-center gap-6 my-auto">
-          <div className="space-y-3">
-            <span
-              className="
-                text-xs sm:text-sm
-                font-extrabold
-                uppercase
-                tracking-[0.35em]
-                text-blue-900
-                dark:text-amber-400
-              "
-            >
-              VARAHA METALIKS PVT. LTD.
+        {/* Top wordmark */}
+        <div className="pt-[8vh] flex justify-center px-6">
+          <div className="flex flex-col items-center gap-3">
+            <span className="label-tech text-copper-deep">
+              Varaha Metaliks Pvt. Ltd.
             </span>
-
-            <h1
-              className="
-                font-sans
-                text-4xl sm:text-6xl md:text-7xl
-                font-black
-                tracking-tight
-                text-slate-950
-                dark:text-white
-                leading-[1.05]
-              "
-            >
-              Varaha Metaliks
-            </h1>
-
-            <div className="w-24 h-1 bg-amber-500 mx-auto rounded-full" />
-
-            <p
-              className="
-                font-sans
-                text-2xl sm:text-3xl md:text-4xl
-                font-bold
-                text-slate-900
-                dark:text-slate-100
-                tracking-tight
-              "
-            >
-              From Iron to Infrastructure.
-            </p>
+            <span className="block h-px w-10 bg-copper/70" />
           </div>
+        </div>
 
+        {/* Center title */}
+        <div className="flex-1 relative flex flex-col items-center justify-center text-center px-6 -mt-10">
+          {/* Soft light bloom for legibility — not a hard panel */}
+          <div
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(80vw,900px)] h-[46vh] rounded-full pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(ellipse at center, rgba(244,241,234,0.66) 0%, rgba(244,241,234,0.38) 42%, rgba(244,241,234,0) 72%)',
+              filter: 'blur(14px)',
+            }}
+          />
+          <h1 className="relative display-tight text-ink text-[clamp(3rem,9vw,8rem)]">
+            Varaha Metaliks
+          </h1>
           <p
-            className="
-              text-sm sm:text-base md:text-lg
-              text-slate-700 dark:text-slate-200
-              max-w-2xl
-              font-medium
-              leading-relaxed
-            "
+            className="relative mt-5 font-display italic font-light text-copper-deep text-[clamp(1.25rem,3.2vw,2.6rem)]"
+            style={{ letterSpacing: '0.005em' }}
           >
+            From Iron to Infrastructure.
+          </p>
+          <p className="relative mt-7 max-w-xl font-sans text-[12px] sm:text-sm text-ink/65 leading-relaxed tracking-[0.08em] uppercase">
             Precision Ductile Iron Pipe Fittings, DI Manhole Covers, &amp;
             Ferrous Alloy Castings.
           </p>
+        </div>
 
-          <div className="mt-6 flex flex-col items-center gap-3 animate-bounce">
-            <div
-              className="
-                flex items-center gap-3
-                px-7 py-3
-                rounded-full
-                bg-slate-950 text-white
-                dark:bg-white dark:text-slate-950
-                text-xs sm:text-sm
-                font-bold
-                tracking-[0.2em]
-                uppercase
-                shadow-2xl
-                border border-white/20
-              "
-            >
-              <span>Scroll to begin</span>
-              <ChevronDown className="w-4 h-4 text-amber-400 dark:text-blue-600" />
-            </div>
-          </div>
+        {/* Scroll cue */}
+        <div className="pb-[7vh] flex flex-col items-center gap-3">
+          <span
+            className="block w-px h-10 bg-gradient-to-b from-transparent via-copper to-copper"
+            style={{ animation: 'vm-scroll-line 2.2s ease-in-out infinite' }}
+          />
+          <span className="label-tech text-ink/70 flex items-center gap-2">
+            Scroll to begin
+            <ChevronDown className="w-3.5 h-3.5 text-copper" strokeWidth={1.5} />
+          </span>
         </div>
       </div>
 
       {/* ================================================================
-          2. STATEMENT 1 — FOUNDING FAMILIES
-          Typography lives in the clear sky band.
-          The factory remains completely visible below it.
+          STATEMENT 1 — GUIDED BY THE FAMILIES (light / sky)
           ================================================================ */}
       <div
-        className="absolute inset-0 z-30"
+        className="absolute inset-0"
         style={{
           opacity: s1.opacity,
           visibility: isStmt1 ? 'visible' : 'hidden',
+          transform: `translate3d(0, ${(1 - s1.progress) * 22}px, 0)`,
         }}
       >
-        <div
-          className="
-            absolute
-            left-[4vw]
-            top-[7vh]
-            sm:top-[8vh]
-            md:top-[9vh]
-            w-[92vw]
-            max-w-[1120px]
-          "
-          style={{
-            transform: `
-              translate3d(
-                0,
-                ${(1 - s1.progress) * 18 - 6}px,
-                0
-              )
-            `,
-          }}
-        >
-          <div className="mb-4 sm:mb-5">
-            <CloudRevealText
-              progress={s1.progress}
-              color="#0a0227"
-              ghostOpacity={0.9}
-              className="
-                font-sans
-                text-[10px] sm:text-[11px] md:text-xs
-                font-medium
-                tracking-[0.28em]
-                sm:tracking-[0.35em]
-                uppercase
-                drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]
-              "
-            >
-              40+ Years of Expertise · Ferrous Metal · Water · Infrastructure
-            </CloudRevealText>
-          </div>
-
-          <CloudRevealText
+        <div className="absolute left-[6vw] right-[6vw] top-[10vh] sm:top-[12vh] max-w-5xl">
+          <WipeText
             progress={s1.progress}
-            color="#0a0227"
-            ghostOpacity={0.8}
-            className="
-              font-sans
-              text-sm sm:text-base md:text-lg
-              font-normal
-              tracking-wide
-              mb-1 sm:mb-2
-              drop-shadow-[0_2px_10px_rgba(0,0,0,0.25)]
-            "
+            activeColor={TONE.copperDeep}
+            ghostOpacity={0.3}
+            edgeColor={TONE.copperDeep}
+            className="label-tech block mb-5"
           >
-            Guided by the
-          </CloudRevealText>
+            40+ Years of Expertise · Ferrous Metal · Water · Infrastructure
+          </WipeText>
 
-          <h2
-            className="
-              leading-[0.9]
-              tracking-[-0.035em]
-              text-white
-            "
-            style={{
-              fontFamily: "'Fraunces', ui-serif, Georgia, serif",
-            }}
-          >
-            <CloudRevealText
+          <p className="font-sans text-sm sm:text-base text-ink/70 mb-2 tracking-wide">
+            <WipeText
               progress={s1.progress}
-              color="#0a0227"
-              ghostOpacity={0.8}
-              className="
-                block
-                font-medium
-                text-[clamp(3rem,6vw,6.5rem)]
-                drop-shadow-[0_3px_16px_rgba(0,0,0,0.3)]
-              "
+              activeColor={TONE.ink}
+              ghostOpacity={0.14}
+              edgeColor={TONE.copper}
             >
-              Mittal, Jhunjhunwala
-            </CloudRevealText>
+              Guided by the
+            </WipeText>
+          </p>
 
-            <CloudRevealText
-              progress={s1.progress}
-              color="#0a0227"
-              ghostOpacity={0.22}
-              className="
-                block
-                italic
-                font-normal
-                text-[clamp(3rem,6vw,6.5rem)]
-                drop-shadow-[0_3px_16px_rgba(0,0,0,0.3)]
-              "
-            >
-              &amp; Jaju
-            </CloudRevealText>
+          <h2 className="display-tight text-ink text-[clamp(2.4rem,6vw,5.6rem)]">
+            <span className="block">
+              <WipeText
+                progress={s1.progress}
+                activeColor={TONE.ink}
+                ghostOpacity={0.14}
+                edgeColor={TONE.copper}
+              >
+                Mittal, Jhunjhunwala
+              </WipeText>
+            </span>
+            <span className="block font-display italic font-light text-copper-deep">
+              <WipeText
+                progress={Math.max(0, s1.progress - 0.15) / 0.85}
+                activeColor={TONE.copperDeep}
+                ghostOpacity={0.2}
+                edgeColor={TONE.copper}
+              >
+                &amp; Jaju
+              </WipeText>
+            </span>
           </h2>
 
-          <div className="mt-5 sm:mt-6 flex items-center gap-3">
+          <div className="mt-6 flex items-center gap-4">
             <span
-              className="h-[1.5px] w-8 sm:w-12 bg-[#fcf9f5] origin-left"
+              className="block h-px w-12 bg-copper"
               style={{
-                opacity: s1.progress,
-                transform: `scaleX(${s1.progress})`,
+                transform: `scaleX(${gsap.utils.clamp(0, 1, s1.progress * 1.6)})`,
+                transformOrigin: 'left',
               }}
             />
-
-            <CloudRevealText
-              progress={s1.progress}
-              color="#0a0227"
-              ghostOpacity={0.18}
-              className="
-                font-sans
-                text-[10px] sm:text-xs
-                font-semibold
-                tracking-[0.3em]
-                uppercase
-              "
-            >
-              Families
-            </CloudRevealText>
+            <span className="label-tech text-ink/60">Families</span>
           </div>
         </div>
       </div>
 
       {/* ================================================================
-          3. STATEMENT 2 — 7,200 METRIC TONS
-          Lower editorial composition.
-          The headline rises from the factory floor.
+          STATEMENT 2 — 7,200 METRIC TONS (number as visual object)
           ================================================================ */}
       <div
-        className="absolute inset-0 z-30"
+        className="absolute inset-0"
         style={{
           opacity: s2.opacity,
           visibility: isStmt2 ? 'visible' : 'hidden',
+          transform: `translate3d(0, ${(1 - s2.progress) * 42}px, 0) scale(${
+            0.97 + s2.progress * 0.03
+          })`,
+          transformOrigin: 'left bottom',
         }}
       >
-        <div
-          className="
-            absolute
-            inset-x-0
-            bottom-0
-            px-6
-            pb-[7vh]
-            sm:px-12
-            sm:pb-[8vh]
-            md:px-16
-            lg:px-[5vw]
-          "
-          style={{
-            transform: `
-              translate3d(
-                0,
-                ${(1 - s2.progress) * 45}px,
-                0
-              )
-              scale(${0.965 + s2.progress * 0.035})
-            `,
-            transformOrigin: 'left bottom',
-          }}
-        >
-          <div
-            className="
-              mb-4
-              flex items-center gap-4
-              font-mono
-              text-[10px] sm:text-xs
-              font-bold
-              tracking-[0.24em]
-              sm:tracking-[0.3em]
-              uppercase
-            "
-          >
-            <span className="h-px w-8 sm:w-12 bg-[#031550]/55" />
-
-            <span className="text-[#031550]/80 drop-shadow-[0_2px_8px_rgba(255,255,255,0.8)]">
-              PROMINENT CASTING MANUFACTURER IN INDIA
+        <div className="absolute inset-x-0 bottom-0 px-[6vw] pb-[9vh]">
+          <div className="flex items-center gap-4 mb-5">
+            <span className="h-px w-12 bg-champagne/80" />
+            <span className="label-tech text-champagne">
+              Prominent Casting Manufacturer in India
             </span>
           </div>
 
-          <h2
-            className="
-              relative
-              max-w-[1080px]
-              font-sans
-              text-[clamp(3.4rem,7.2vw,7.8rem)]
-              font-black
-              tracking-[-0.055em]
-              leading-[0.86]
-            "
-            style={{
-              textRendering: 'geometricPrecision',
-            }}
-          >
-            <SplitReveal progress={s2.progress}>
-              7,200 Metric Tons
-            </SplitReveal>
+          <div className="flex items-end gap-x-5 gap-y-2 flex-wrap">
+            <span className="numeric-object text-ivory text-[clamp(4.6rem,13vw,12.5rem)]">
+              <WipeText
+                progress={s2.progress}
+                activeColor={TONE.ivory}
+                ghostOpacity={0.12}
+                edgeColor={TONE.champagne}
+              >
+                7,200
+              </WipeText>
+            </span>
+            <span className="pb-[1.2vh] sm:pb-[1.6vh] label-tech text-champagne text-[11px] sm:text-sm tracking-[0.34em]">
+              Metric Tons
+            </span>
+          </div>
 
-            <br />
-
-            <SplitReveal
-              progress={Math.max(0, s2.progress - 0.08) / 0.92}
-              className="text-[#031550]"
+          <h2 className="mt-1 font-sans font-bold uppercase tracking-[0.16em] text-ivory text-[clamp(1rem,2.4vw,1.9rem)]">
+            <WipeText
+              progress={Math.max(0, s2.progress - 0.12) / 0.88}
+              activeColor={TONE.ivory}
+              ghostOpacity={0.12}
+              edgeColor={TONE.champagne}
             >
               Annual Capacity
-            </SplitReveal>
+            </WipeText>
           </h2>
 
-          <div
-            className="mt-5 flex items-start sm:items-center gap-8"
-            style={{
-              opacity: gsap.utils.clamp(0, 1, s2.progress * 1.35),
-            }}
+          <p
+            className="mt-5 max-w-2xl font-sans text-[11px] sm:text-[13px] text-ivory/65 uppercase tracking-[0.16em] leading-relaxed"
+            style={{ opacity: gsap.utils.clamp(0, 1, s2.progress * 1.4 - 0.3) }}
           >
-            <span className="hidden sm:block h-px w-10 bg-[#031550]/45 shrink-0" />
-
-            <p
-              className="
-                max-w-2xl
-                text-xs sm:text-sm md:text-base
-                font-medium
-                text-[#031550]/78
-                uppercase
-                tracking-[0.12em]
-                sm:tracking-[0.16em]
-                leading-relaxed
-                drop-shadow-[0_2px_10px_rgba(0,0,0,0.75)]
-              "
-            >
-              FERROUS METAL, WATER, INFRA &amp; OTHER DIVERSE SECTORS
-            </p>
-          </div>
+            Ferrous Metal, Water, Infra &amp; Other Diverse Sectors
+          </p>
         </div>
       </div>
 
       {/* ================================================================
-          4. STATEMENT 3 — MOULDING FACILITIES
-          Technical/industrial treatment while preserving original copy.
+          STATEMENT 3 — MOULDING FACILITIES (dark foundry film)
           ================================================================ */}
       <div
-        className="absolute inset-0 z-30"
+        className="absolute inset-0"
         style={{
           opacity: s3.opacity,
           visibility: isStmt3 ? 'visible' : 'hidden',
+          transform: `translate3d(0, ${(1 - s3.progress) * 42}px, 0) scale(${
+            0.97 + s3.progress * 0.03
+          })`,
+          transformOrigin: 'left bottom',
         }}
       >
-        <div
-          className="
-            absolute
-            inset-x-0
-            bottom-0
-            px-6
-            pb-[7vh]
-            sm:px-12
-            sm:pb-[8vh]
-            md:px-16
-            lg:px-[5vw]
-          "
-          style={{
-            transform: `
-              translate3d(
-                0,
-                ${(1 - s3.progress) * 45}px,
-                0
-              )
-              scale(${0.965 + s3.progress * 0.035})
-            `,
-            transformOrigin: 'left bottom',
-          }}
-        >
-          <div
-            className="
-              mb-4
-              flex items-center gap-4
-              font-mono
-              text-[10px] sm:text-xs
-              font-bold
-              tracking-[0.2em]
-              sm:tracking-[0.3em]
-              uppercase
-            "
-          >
-            <span className="h-px w-8 sm:w-12 bg-white/60" />
-
-            <span className="text-[#031550]/80 drop-shadow-[0_2px_8px_rgba(255,255,255,0.8)]">
-              BIS and ISO certified | Upholding Strict Quality Standards
+        <div className="absolute inset-x-0 bottom-0 px-[6vw] pb-[9vh]">
+          <div className="flex items-center gap-4 mb-5">
+            <span className="h-px w-12 bg-copper" />
+            <span className="label-tech text-champagne">
+              BIS and ISO certified&nbsp;|&nbsp;Upholding Strict Quality
+              Standards
             </span>
           </div>
 
-          <h2
-            className="
-              max-w-[1080px]
-              font-sans
-              text-[clamp(3rem,6.8vw,7.2rem)]
-              font-extrabold
-              text-white
-              tracking-[-0.045em]
-              leading-[0.88]
-              drop-shadow-[0_5px_24px_rgba(0,0,0,0.7)]
-            "
-          >
-            <SplitReveal progress={s3.progress}>
+          <h2 className="max-w-5xl display-tight text-ivory text-[clamp(2.2rem,6.2vw,5.8rem)]">
+            <WipeText
+              progress={s3.progress}
+              activeColor={TONE.ivory}
+              ghostOpacity={0.1}
+              edgeColor={TONE.copper}
+            >
               Machine &amp; Hand Moulding Facilities
-            </SplitReveal>
+            </WipeText>
           </h2>
 
           <p
-            className="
-              mt-5
-              max-w-3xl
-              text-sm sm:text-lg md:text-xl
-              font-medium
-              text-[#031550]/80
-              leading-relaxed
-              drop-shadow-[0_3px_14px_rgba(0,0,0,0.75)]
-            "
+            className="mt-5 max-w-2xl font-sans text-sm sm:text-base text-ivory/70 leading-relaxed"
             style={{
-              opacity: gsap.utils.clamp(0, 1, (s3.progress - 0.18) / 0.5),
-              transform: `
-                translateY(
-                  ${(1 - gsap.utils.clamp(0, 1, (s3.progress - 0.18) / 0.82)) * 18}px
-                )
-              `,
+              opacity: gsap.utils.clamp(0, 1, (s3.progress - 0.2) / 0.5),
+              transform: `translateY(${(1 - gsap.utils.clamp(0, 1, (s3.progress - 0.2) / 0.8)) * 16}px)`,
             }}
           >
             Machine moulding featuring 450 and 900 ARPA and hand moulding
@@ -838,20 +371,27 @@ export default function ScrollToBeginHeader({
         </div>
       </div>
 
-      {/* ================================================================
-          EDGE VIGNETTE
-          Very subtle cinematic framing. Does not hide the factory.
-          ================================================================ */}
+      {/* ======== Right-edge film progress rule ======== */}
+      <div className="absolute right-[3vw] top-1/2 -translate-y-1/2 hidden sm:flex flex-col items-center gap-3">
+        <span className="block w-px h-24 bg-ink/15 overflow-hidden relative">
+          <span
+            className="absolute inset-x-0 top-0 bg-copper"
+            style={{
+              height: '100%',
+              transform: `scaleY(${scrollProgress})`,
+              transformOrigin: 'top',
+            }}
+          />
+        </span>
+      </div>
+
+      {/* ======== Edge vignette — keeps the frame cinematic ======== */}
       <div
-        className="absolute inset-0 z-50 pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          background: `
-            radial-gradient(
-              ellipse at center,
-              transparent 52%,
-              rgba(255,255,255,0.10) 100%
-            )
-          `,
+          background:
+            'radial-gradient(120% 100% at 50% 45%, transparent 58%, rgba(20,22,24,0.22) 100%)',
+          opacity: 0.5 + scrimDark * 0.4,
         }}
       />
     </div>
