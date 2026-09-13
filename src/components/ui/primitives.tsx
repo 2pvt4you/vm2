@@ -9,21 +9,29 @@ import {
 } from 'motion/react';
 
 /* ============================================================
-   Design tokens (mirror src/index.css @theme)
+   Design tokens — mirrored from src/index.css @theme.
+   One navy / ivory / champagne system across the whole film.
    ============================================================ */
 export const TONE = {
   ivory: '#F4F1EA',
   mineral: '#E7E4DC',
-  paper: '#FBFAF6',
-  ink: '#15171A',
-  inkSoft: '#3A3D40',
-  graphite: '#25282A',
-  graphite2: '#1D2022',
-  steel: '#6E7478',
-  copper: '#B96A3A',
-  copperDeep: '#9A5429',
-  champagne: '#D8B56D',
-  cobalt: '#315CFF',
+  mineralGrey: '#C9C4B8',
+  paper: '#FBF9F4',
+  navy: '#071A2F',
+  navy2: '#0B233D',
+  steelNavy: '#163A58',
+  ink: '#0A2035',
+  inkSoft: '#35485C',
+  metallic: '#8B959D',
+  champagne: '#C7A66A',
+  champagneDeep: '#7A5E2B',
+  /* legacy aliases used across components */
+  graphite: '#0B233D',
+  graphite2: '#071A2F',
+  steel: '#8B959D',
+  copper: '#C7A66A',
+  copperDeep: '#7A5E2B',
+  cobalt: '#163A58',
 } as const;
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -42,7 +50,7 @@ const revealVariants: Variants = {
 
 export function Reveal({
   children,
-  className,
+  className = '',
   delay = 0,
   y = 34,
   once = true,
@@ -86,7 +94,7 @@ const staggerVariants: Variants = {
 
 export function StaggerGroup({
   children,
-  className,
+  className = '',
   amount = 0.2,
 }: {
   children: ReactNode;
@@ -110,19 +118,12 @@ export function StaggerGroup({
 
 export function StaggerItem({
   children,
-  className,
+  className = '',
 }: {
   children: ReactNode;
   className?: string;
 }) {
-  return (
-    <motion.div
-      className={className}
-      variants={revealVariants}
-    >
-      {children}
-    </motion.div>
-  );
+  return <motion.div className={className} variants={revealVariants}>{children}</motion.div>;
 }
 
 /* ============================================================
@@ -178,7 +179,7 @@ export function MaskLines({
    ============================================================ */
 export function Parallax({
   children,
-  className,
+  className = '',
   distance = 60,
   offset = ['start end', 'end start'] as [string, string],
   style,
@@ -207,7 +208,7 @@ export function Parallax({
 }
 
 /* ============================================================
-   SectionIndex — small editorial marker (e.g. 01 / 06)
+   SectionIndex — small editorial marker (e.g. SCENE 02 / 10)
    ============================================================ */
 export function SectionIndex({
   index,
@@ -222,10 +223,119 @@ export function SectionIndex({
     <span
       className={`label-tech ${className}`}
       style={{
-        color: tone === 'dark' ? TONE.copper : TONE.champagne,
+        color: tone === 'dark' ? TONE.champagne : TONE.champagneDeep,
       }}
     >
       {index}
+    </span>
+  );
+}
+
+/* ============================================================
+   CornerFrame — fine registration ticks at the four corners.
+   The shared corner language of the whole film.
+   ============================================================ */
+export function CornerFrame({
+  color = 'rgba(199,166,106,0.55)',
+  size = 18,
+  inset = 16,
+}: {
+  color?: string;
+  size?: number;
+  inset?: number;
+}) {
+  const s: CSSProperties = { width: size, height: size };
+  const pos = (styles: CSSProperties): CSSProperties => ({
+    position: 'absolute',
+    ...styles,
+  });
+  return (
+    <span aria-hidden className="pointer-events-none absolute inset-0">
+      <span
+        style={pos({
+          top: inset,
+          left: inset,
+          ...s,
+          borderLeft: `1px solid ${color}`,
+          borderTop: `1px solid ${color}`,
+        })}
+      />
+      <span
+        style={pos({
+          top: inset,
+          right: inset,
+          ...s,
+          borderRight: `1px solid ${color}`,
+          borderTop: `1px solid ${color}`,
+        })}
+      />
+      <span
+        style={pos({
+          bottom: inset,
+          left: inset,
+          ...s,
+          borderLeft: `1px solid ${color}`,
+          borderBottom: `1px solid ${color}`,
+        })}
+      />
+      <span
+        style={pos({
+          bottom: inset,
+          right: inset,
+          ...s,
+          borderRight: `1px solid ${color}`,
+          borderBottom: `1px solid ${color}`,
+        })}
+      />
+    </span>
+  );
+}
+
+/* ============================================================
+   DiamondMark — the shared gold separator glyph
+   ============================================================ */
+export function DiamondMark({
+  size = 6,
+  color = TONE.champagne,
+  className = '',
+}: {
+  size?: number;
+  color?: string;
+  className?: string;
+}) {
+  return (
+    <span
+      aria-hidden
+      className={`inline-block rotate-45 shrink-0 ${className}`}
+      style={{ width: size, height: size, background: color }}
+    />
+  );
+}
+
+/* ============================================================
+   ArrowRule — STATE NAME ────────────→  geographic index rule
+   ============================================================ */
+export function ArrowRule({
+  className = '',
+  color = 'rgba(10,32,53,0.28)',
+  headColor = 'rgba(122,94,43,0.8)',
+}: {
+  className?: string;
+  color?: string;
+  headColor?: string;
+}) {
+  return (
+    <span aria-hidden className={`relative flex-1 h-px ${className}`} style={{ background: color }}>
+      <span
+        className="absolute right-0 top-1/2 -translate-y-1/2"
+        style={{
+          width: 7,
+          height: 7,
+          borderTop: `1px solid ${headColor}`,
+          borderRight: `1px solid ${headColor}`,
+          transform: 'translateY(-50%) rotate(45deg)',
+        }}
+      />
     </span>
   );
 }

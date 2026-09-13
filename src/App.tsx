@@ -24,10 +24,10 @@ function App() {
               setActiveTab={setActiveTab}
               onAnimationFinishedChange={setIsAnimationFinished}
             />
-            <Products />
             <About />
-            <Approvals />
+            <Products />
             <Clients />
+            <Approvals />
             <Contact />
           </>
         );
@@ -48,10 +48,10 @@ function App() {
               setActiveTab={setActiveTab}
               onAnimationFinishedChange={setIsAnimationFinished}
             />
-            <Products />
             <About />
-            <Approvals />
+            <Products />
             <Clients />
+            <Approvals />
             <Contact />
           </>
         );
@@ -59,7 +59,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-ivory text-ink flex flex-col">
+    <div className="min-h-screen bg-navy text-ink flex flex-col">
       <SectionThemeSpy />
       <Grain />
       <Navbar
