@@ -14,8 +14,8 @@ interface NavbarProps {
 const NAV_LINKS: { name: string; href: string; id: TabId }[] = [
   { name: 'About', href: '#about', id: 'about' },
   { name: 'Products', href: '#products', id: 'products' },
-  { name: 'Approvals', href: '#approvals', id: 'approvals' },
   { name: 'Clients', href: '#clients', id: 'clients' },
+  { name: 'Approvals', href: '#approvals', id: 'approvals' },
   { name: 'Contact', href: '#contact', id: 'contact' },
 ];
 
@@ -215,15 +215,15 @@ export default function Navbar({
             animate={{ clipPath: 'inset(0 0 0% 0)' }}
             exit={{ clipPath: 'inset(0 0 100% 0)' }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-[85] md:hidden bg-ivory flex flex-col"
+            className="fixed inset-0 z-[85] md:hidden bg-navy flex flex-col"
           >
             <div className="flex items-center justify-between h-14 px-5">
-              <span className="font-sans font-bold uppercase tracking-[0.22em] text-[12px] text-ink">
-                Varaha <span style={{ color: TONE.copper }}>Metaliks</span>
+              <span className="font-sans font-bold uppercase tracking-[0.22em] text-[12px] text-ivory">
+                Varaha <span style={{ color: TONE.champagne }}>Metaliks</span>
               </span>
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-10 h-10 -mr-2 flex items-center justify-center text-ink"
+                className="w-10 h-10 -mr-2 flex items-center justify-center text-ivory"
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5" strokeWidth={1.5} />
@@ -242,12 +242,12 @@ export default function Navbar({
                     ease: [0.22, 1, 0.36, 1],
                   }}
                   onClick={() => goSection(link.id)}
-                  className="group flex items-baseline justify-between border-b border-ink/10 py-4 text-left"
+                  className="group flex items-baseline justify-between border-b border-ivory/10 py-4 text-left"
                 >
-                  <span className="display-tight text-4xl text-ink">
+                  <span className="display-tight text-4xl text-ivory">
                     {link.name}
                   </span>
-                  <span className="label-tech text-copper">0{i + 1}</span>
+                  <span className="label-tech text-champagne">0{i + 1}</span>
                 </motion.button>
               ))}
               <motion.button
@@ -255,15 +255,15 @@ export default function Navbar({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 onClick={() => goSection('contact')}
-                className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-graphite text-ivory py-4 label-tech"
+                className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-champagne text-navy py-4 label-tech"
               >
                 Inquire Now
-                <ArrowUpRight className="w-4 h-4 text-champagne" strokeWidth={1.5} />
+                <ArrowUpRight className="w-4 h-4 text-navy" strokeWidth={1.5} />
               </motion.button>
             </div>
 
             <div className="px-7 pb-8">
-              <p className="label-tech text-steel">
+              <p className="label-tech text-metallic">
                 BIS Certified ISO 9001 Company
               </p>
             </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import gsap from 'gsap';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RotateCw, Move3d, RefreshCcw, Eye, Compass } from 'lucide-react';
@@ -142,12 +143,12 @@ export default function MercuryViewer({
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    // 4. Balanced Foundry & Studio Lighting setup ismobile
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.6);
+    // 4. Showroom lighting — warm key · cool fill · champagne rim
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.1);
     scene.add(ambientLight);
 
-    // Key Light - focused dimensional light source
-    const dirLight1 = new THREE.DirectionalLight(0xfff4e6, 1.15);
+    // Key Light — warm directional, casts the grounding shadow
+    const dirLight1 = new THREE.DirectionalLight(0xffe3ba, 1.25);
     dirLight1.position.set(-5, 7, 4);
     dirLight1.castShadow = true;
     dirLight1.shadow.mapSize.width = 2048;
@@ -155,40 +156,28 @@ export default function MercuryViewer({
     dirLight1.shadow.bias = -0.0001;
     scene.add(dirLight1);
 
-    // Fill Light - subtle cool ambient contrast
-    const dirLight2 = new THREE.DirectionalLight(0xdce8f2, 0.28);
+    // Fill Light — soft cool contrast from the opposite side
+    const dirLight2 = new THREE.DirectionalLight(0xd7e4f0, 0.3);
     dirLight2.position.set(-6, 3, -4);
     scene.add(dirLight2);
 
-    // Rim Light — warm burnished metal edge
-    const dirLight3 = new THREE.DirectionalLight(0xd8a06a, 0.75);
+    // Rim Light — subtle champagne separation edge
+    const dirLight3 = new THREE.DirectionalLight(0xc7a66a, 0.85);
     dirLight3.position.set(-3, 4, -6);
     scene.add(dirLight3);
 
-    // Top Overhead Light
-    const topLight = new THREE.DirectionalLight(0xffe9cf, 0.42);
+    // Top Overhead Light — soft showroom wash
+    const topLight = new THREE.DirectionalLight(0xfff0d8, 0.45);
     topLight.position.set(0, 8, 1);
     scene.add(topLight);
 
-    // Warm copper separation light — makes the DI fitting stand out
-    const productRimLight = new THREE.PointLight(
-      0xc2764a,
-      1.6,
-      9,
-      2
-    );
-
+    // Champagne separation light — lifts the fitting off the floor
+    const productRimLight = new THREE.PointLight(0xc7a66a, 1.4, 9, 2);
     productRimLight.position.set(-2.5, 2.5, -3.5);
     scene.add(productRimLight);
 
     // Soft front fill — keeps flange details visible
-    const productFrontFill = new THREE.PointLight(
-      0xffffff,
-      0.7,
-      7,
-      2
-    );
-
+    const productFrontFill = new THREE.PointLight(0xffffff, 0.65, 7, 2);
     productFrontFill.position.set(2, 1, 4);
     scene.add(productFrontFill);
 
@@ -230,8 +219,8 @@ export default function MercuryViewer({
     const shadowFloor = new THREE.Mesh(
       new THREE.PlaneGeometry(7, 7),
       new THREE.ShadowMaterial({
-        color: 0x101214,
-        opacity: 0.3,
+        color: 0x0a2035,
+        opacity: 0.32,
       })
     );
 
@@ -274,6 +263,10 @@ export default function MercuryViewer({
     // Cleanup
     return () => {
       if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+      if (modelGroupRef.current) {
+        gsap.killTweensOf(modelGroupRef.current.scale);
+        gsap.killTweensOf(modelGroupRef.current.position);
+      }
       resizeObserver.disconnect();
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
       if (rendererRef.current && rendererRef.current.domElement && container.contains(rendererRef.current.domElement)) {
@@ -290,6 +283,11 @@ export default function MercuryViewer({
 
     activeLoadingUrlRef.current = modelUrl;
 
+    const reduceMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const beginLoad = () => {
     // Clear previous geometry immediately to prevent any mix-ups
     while (modelGroup.children.length > 0) {
       const obj = modelGroup.children[0];
@@ -413,6 +411,20 @@ export default function MercuryViewer({
           modelGroup.position.y = -0.28;
           modelGroup.add(wrapper);
 
+          // SETTLE — the next exhibit arrives: scale + camera dolly ease in
+          if (!reduceMotion) {
+            modelGroup.scale.setScalar(0.94);
+            modelGroup.position.y = -0.36;
+            gsap.to(modelGroup.scale, { x: 1, y: 1, z: 1, duration: 0.75, ease: 'power3.out' });
+            gsap.to(modelGroup.position, { y: -0.28, duration: 0.75, ease: 'power3.out' });
+            const cam = cameraRef.current;
+            if (cam) {
+              const z0 = cam.position.z;
+              cam.position.z = z0 + 0.45;
+              gsap.to(cam.position, { z: z0, duration: 0.9, ease: 'power2.out' });
+            }
+          }
+
           if (controlsRef.current && cameraRef.current) {
             cameraRef.current.position.set(
               0,
@@ -436,6 +448,27 @@ export default function MercuryViewer({
     };
 
     tryLoadNext();
+    };
+
+    // SOFT EXIT — the current exhibit steps back before the swap
+    const hadModel = modelGroup.children.length > 0;
+    if (hadModel && !reduceMotion) {
+      gsap.killTweensOf(modelGroup.scale);
+      gsap.killTweensOf(modelGroup.position);
+      gsap.to(modelGroup.scale, { x: 0.9, y: 0.9, z: 0.9, duration: 0.26, ease: 'power2.in' });
+      gsap.to(modelGroup.position, {
+        y: -0.4,
+        duration: 0.26,
+        ease: 'power2.in',
+        onComplete: () => {
+          gsap.killTweensOf(modelGroup.scale);
+          gsap.killTweensOf(modelGroup.position);
+          beginLoad();
+        },
+      });
+    } else {
+      beginLoad();
+    }
   }, [modelUrl, productName]);
 
   // Reset Camera View Helper

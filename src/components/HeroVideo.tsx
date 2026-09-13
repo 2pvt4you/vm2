@@ -151,19 +151,19 @@ export default function HeroVideo({ setActiveTab, onVideoLoaded, onAnimationFini
     };
   }, [onVideoLoaded]);
 
-  // The film itself travels LIGHT → INDUSTRIAL DARK → FIRE → FLASH.
-  // Mirror that onto the global theme once the foundry interior begins.
+  // The film itself travels LIGHT SKY → FACTORY → FOUNDRY FIRE → FLASH.
+  // Mirror that onto the global theme once the pouring floor begins.
   useEffect(() => {
     document.documentElement.dataset.uiTheme =
-      scrollProgress > 0.52 ? 'dark' : 'light';
-  }, [scrollProgress > 0.52]);
+      scrollProgress > 0.66 ? 'dark' : 'light';
+  }, [scrollProgress > 0.66]);
 
   return (
     <div
       ref={containerRef}
       id="hero-cinematic-scroll-container"
-      data-theme={scrollProgress > 0.52 ? 'dark' : 'light'}
-      className="relative w-full h-[360vh] bg-graphite-2"
+      data-theme={scrollProgress > 0.66 ? 'dark' : 'light'}
+      className="relative w-full h-[420vh] bg-graphite-2"
     >
       {/*
         Editorial preloader — graphite end-card until priority frames exist.

@@ -7,8 +7,6 @@ import {
   Compass,
   BoxSelect,
   Layers,
-  ChevronLeft,
-  ChevronRight,
   FileDown,
   SlidersHorizontal,
   X,
@@ -20,12 +18,16 @@ import {
   Settings2,
   CheckCircle2,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import MercuryViewer from './3d/MercuryViewer';
-import { Reveal, MaskLines, StaggerGroup, StaggerItem, TONE } from './ui/primitives';
+import { Reveal, MaskLines, StaggerGroup, StaggerItem, DiamondMark, TONE } from './ui/primitives';
 import SEMISB from '../assets/images/Minimalist Simple Business imvoice (1).png';
 import MOULDINGFLOOR from '../assets/images/optimized/mouldingfloor.webp';
 import ENDCAPIMAGE from '../assets/images/Minimalist Simple Business imvoice (1).png';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export interface ProductItem {
   id: string;
@@ -55,7 +57,6 @@ const UNIFIED_SPECS = {
 };
 
 export const ALL_PRODUCTS: ProductItem[] = [
-  // 1. DOUBLE FLANGED BENDS 11.25°, 22.5°, 45°, 90°
   {
     id: 'double-flanged-bends',
     name: 'DOUBLE FLANGED BENDS',
@@ -66,7 +67,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     ...UNIFIED_SPECS,
     angles: ['90° Bend', '45° Bend', '22.5° Bend', '11.25° Bend'],
   },
-  // 2. DOUBLE FLANGED REDUCER
   {
     id: 'double-flanged-reducer',
     name: 'DOUBLE FLANGED REDUCER',
@@ -76,7 +76,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     modelUrl: '/glbmodel/DFRED.glb',
     ...UNIFIED_SPECS,
   },
-  // 3. DUCKFOOT BEND
   {
     id: 'duckfoot-bend',
     name: 'DUCKFOOT BEND',
@@ -86,7 +85,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     modelUrl: '/glbmodel/DUCKFB.glb',
     ...UNIFIED_SPECS,
   },
-  // 4. ALL SOCKET TEE
   {
     id: 'all-socket-tee',
     name: 'ALL SOCKET TEE',
@@ -96,7 +94,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     modelUrl: '/glbmodel/AST.glb',
     ...UNIFIED_SPECS,
   },
-  // 5. ALL FLANGE TEE
   {
     id: 'all-flange-tee',
     name: 'ALL FLANGE TEE',
@@ -106,7 +103,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     modelUrl: '/glbmodel/AFT.glb',
     ...UNIFIED_SPECS,
   },
-  // 6. AIR VALVE TEE
   {
     id: 'air-valve-tee',
     name: 'AIR VALVE TEE',
@@ -116,7 +112,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     modelUrl: '/glbmodel/A_V.glb',
     ...UNIFIED_SPECS,
   },
-  // 7. DOUBLE SOCKET BENDS
   {
     id: 'double-socket-bends',
     name: 'DOUBLE SOCKET BENDS',
@@ -127,7 +122,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     ...UNIFIED_SPECS,
     angles: ['90° Bend', '45° Bend', '22.5° Bend', '11.25° Bend'],
   },
-  // 8. DOUBLE SOCKET REDUCER
   {
     id: 'double-socket-reducer',
     name: 'DOUBLE SOCKET REDUCER',
@@ -137,7 +131,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     modelUrl: '/glbmodel/DSRED.glb',
     ...UNIFIED_SPECS,
   },
-  // 9. FLANGE SOCKET
   {
     id: 'flange-socket',
     name: 'FLANGE SOCKET',
@@ -147,7 +140,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     modelUrl: '/glbmodel/FSOCKET.glb',
     ...UNIFIED_SPECS,
   },
-  // 10. FLANGE SPIGOT
   {
     id: 'flange-spigot',
     name: 'FLANGE SPIGOT',
@@ -157,7 +149,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     modelUrl: '/glbmodel/FSPIGOT.glb',
     ...UNIFIED_SPECS,
   },
-  // 11. MECHANICAL JOINT COLLAR
   {
     id: 'mechanical-joint-collar',
     name: 'MECHANICAL JOINT COLLAR',
@@ -167,7 +158,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     modelUrl: '/glbmodel/mjc.glb',
     ...UNIFIED_SPECS,
   },
-  // 12. DISMANTLING JOINT
   {
     id: 'dismantling-joint',
     name: 'DISMANTLING JOINT',
@@ -177,7 +167,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     modelUrl: '/glbmodel/DISJ.glb',
     ...UNIFIED_SPECS,
   },
-  // 13. SEMICIRCULAR BENDS
   {
     id: 'semicircular-bends',
     name: 'SEMICIRCULAR BENDS',
@@ -187,7 +176,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     imageUrl: SEMISB,
     ...UNIFIED_SPECS,
   },
-  // 14. END CAPS
   {
     id: 'end-caps',
     name: 'END CAPS',
@@ -197,7 +185,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     imageUrl: ENDCAPIMAGE,
     ...UNIFIED_SPECS,
   },
-  // 15. BELL MOUTH
   {
     id: 'bell-mouth',
     name: 'BELL MOUTH',
@@ -207,7 +194,6 @@ export const ALL_PRODUCTS: ProductItem[] = [
     modelUrl: '/glbmodel/BELLM.glb',
     ...UNIFIED_SPECS,
   },
-  // 16. MANHOLE COVER & SPECIAL CASTINGS
   {
     id: 'manhole-cover-special-castings',
     name: 'MANHOLE COVER & SPECIAL CASTINGS',
@@ -254,24 +240,132 @@ const CATEGORIES = [
   'Special Castings & More',
 ];
 
+/* ================================================================
+   CatalogList — the product index as a premium technical catalogue.
+   NUMBER · NAME · CATEGORY · ACTIVE INDICATOR · FINE DIVIDERS
+   ================================================================ */
+function CatalogList({
+  activeIndex,
+  onSelect,
+  itemRefs,
+  className = '',
+}: {
+  activeIndex: number;
+  onSelect: (i: number) => void;
+  itemRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>;
+  className?: string;
+}) {
+  return (
+    <div className={`flex flex-col min-h-0 ${className}`}>
+      <div className="flex items-center justify-between pb-3 border-b border-ink/15">
+        <span className="label-tech text-copper-deep">Product Range</span>
+        <span className="font-mono text-[10px] tracking-[0.2em] text-ink/45 tabular-nums">
+          {ALL_PRODUCTS.length} REF
+        </span>
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+        {ALL_PRODUCTS.map((p, idx) => {
+          const active = idx === activeIndex;
+          return (
+            <button
+              key={p.id}
+              ref={(el) => {
+                itemRefs.current[idx] = el;
+              }}
+              onClick={() => onSelect(idx)}
+              className={`group w-full flex items-center gap-3 py-3 border-b border-ink/8 text-left transition-colors duration-300 ${
+                active ? 'bg-mineral/80' : 'hover:bg-mineral/50'
+              }`}
+              aria-pressed={active}
+            >
+              <span
+                className={`font-mono text-[10px] tracking-[0.18em] tabular-nums shrink-0 w-6 ${
+                  active ? 'text-copper-deep' : 'text-ink/40'
+                }`}
+              >
+                {String(idx + 1).padStart(2, '0')}
+              </span>
+              <span className="flex-1 min-w-0">
+                <span
+                  className={`block font-sans text-[11px] font-semibold uppercase tracking-[0.08em] truncate transition-colors ${
+                    active ? 'text-ink' : 'text-ink/55 group-hover:text-ink/80'
+                  }`}
+                >
+                  {toTitleCase(p.name)}
+                </span>
+                <span className="block font-mono text-[9px] tracking-[0.16em] text-ink/38 uppercase truncate">
+                  {p.category}
+                </span>
+              </span>
+              <DiamondMark
+                size={5}
+                color={active ? TONE.champagne : 'rgba(10,32,53,0.15)'}
+                className="shrink-0 transition-transform duration-300 group-hover:scale-125"
+              />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function Products() {
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [isSpecsOpen, setIsSpecsOpen] = useState<boolean>(false);
   const [selectedAngle, setSelectedAngle] = useState<string>('90° Bend');
+  const reduce = useReducedMotion();
 
   const activeProduct = ALL_PRODUCTS[activeIndex] || ALL_PRODUCTS[0];
 
-  const railScrollerRef = useRef<HTMLDivElement>(null);
-  const railItemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
+  const captionRef = useRef<HTMLDivElement>(null);
+  const emberRef = useRef<HTMLDivElement>(null);
+  const catalogItemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const mobileCatalogItemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  /* Threshold: navy foundry dark → ivory portal opens, light falls. */
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    if (reduce || !mq.matches) {
+      if (portalRef.current) portalRef.current.style.clipPath = 'inset(0% 0% 0% 0%)';
+      if (captionRef.current) captionRef.current.style.opacity = '0';
+      if (emberRef.current) emberRef.current.style.opacity = '0';
+      return;
+    }
+    const ctx = gsap.context(() => {
+      const st = {
+        trigger: trackRef.current,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 0.55,
+      };
+      gsap.fromTo(
+        portalRef.current,
+        { clipPath: 'inset(40% 42% round 26px)' },
+        { clipPath: 'inset(0% 0% round 0px)', ease: 'none', scrollTrigger: { ...st, end: '58% bottom' } }
+      );
+      gsap.fromTo(
+        captionRef.current,
+        { opacity: 1 },
+        { opacity: 0, ease: 'none', scrollTrigger: { ...st, end: '34% bottom' } }
+      );
+      gsap.fromTo(
+        emberRef.current,
+        { opacity: 1 },
+        { opacity: 0, ease: 'none', scrollTrigger: { ...st, end: '46% bottom' } }
+      );
+    }, trackRef);
+    return () => ctx.revert();
+  }, [reduce]);
 
   useEffect(() => {
-    const el = railItemRefs.current[activeIndex];
-    const container = railScrollerRef.current;
-    if (el && container) {
-      const left = el.offsetLeft - container.clientWidth / 2 + el.clientWidth / 2;
-      container.scrollTo({ left, behavior: 'smooth' });
-    }
-  }, [activeIndex]);
+    const el = catalogItemRefs.current[activeIndex];
+    el?.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+    const mel = mobileCatalogItemRefs.current[activeIndex];
+    mel?.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+  }, [activeIndex, reduce]);
 
   const handleSwitchProduct = (index: number) => {
     setActiveIndex(index);
@@ -279,330 +373,350 @@ export default function Products() {
     if (p.angles && p.angles.length > 0) setSelectedAngle(p.angles[0]);
   };
 
-  const scrollRail = (dir: number) => {
-    railScrollerRef.current?.scrollBy({ left: dir * 280, behavior: 'smooth' });
-  };
-
   const ActiveIcon = activeProduct.icon;
 
   return (
-    <section
-      id="products"
-      className="relative w-full text-ink overflow-hidden"
-    >
+    <section id="products" data-theme="light" className="relative w-full text-ink overflow-hidden">
       {/* ================================================================
-          PRODUCT STAGE — bright industrial portal (emerges from flash)
+          THRESHOLD + SHOWROOM STAGE
           ================================================================ */}
-      <div
-        data-theme="light"
-        className="relative w-full h-screen h-[100dvh] flex flex-col overflow-hidden select-none bg-ivory"
-      >
-        {/* Portal photograph */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${MOULDINGFLOOR})` }}
-        />
-        {/* Seating + legibility veils */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'linear-gradient(180deg, rgba(244,241,234,0.72) 0%, rgba(244,241,234,0.10) 18%, rgba(244,241,234,0) 42%, rgba(244,241,234,0) 72%, rgba(37,40,42,0.10) 92%, rgba(37,40,42,0.28) 100%)',
-          }}
-        />
-        <div
-          className="absolute inset-y-0 left-0 w-[42%] pointer-events-none hidden md:block"
-          style={{
-            background:
-              'linear-gradient(90deg, rgba(244,241,234,0.55) 0%, rgba(244,241,234,0.12) 55%, transparent 100%)',
-          }}
-        />
-
-        {/* ---- Compact product rail ---- */}
-        <div className="relative z-30 pt-14 sm:pt-[72px]">
-          <div className="relative px-2 sm:px-6">
-            <button
-              onClick={() => scrollRail(-1)}
-              aria-label="Previous products"
-              className="absolute left-1 sm:left-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full border border-ink/15 bg-ivory/80 backdrop-blur text-ink/70 hover:text-copper hover:border-copper/50 flex items-center justify-center transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
-            </button>
-            <button
-              onClick={() => scrollRail(1)}
-              aria-label="Next products"
-              className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full border border-ink/15 bg-ivory/80 backdrop-blur text-ink/70 hover:text-copper hover:border-copper/50 flex items-center justify-center transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
-            </button>
-
+      <div ref={trackRef} className="relative md:h-[235vh]">
+        <div className="md:sticky md:top-0 md:h-screen md:overflow-hidden">
+          {/* Navy base — the foundry dark the portal opens from */}
+          <div className="absolute inset-0 bg-navy">
             <div
-              ref={railScrollerRef}
-              className="no-scrollbar flex items-center gap-1.5 overflow-x-auto scroll-smooth px-9 sm:px-12 py-1"
-            >
-              {ALL_PRODUCTS.map((prod, idx) => {
-                const isActive = activeIndex === idx;
-                return (
-                  <button
-                    key={prod.id}
-                    ref={(el) => {
-                      railItemRefs.current[idx] = el;
-                    }}
-                    onClick={() => handleSwitchProduct(idx)}
-                    className={`group relative shrink-0 rounded-full px-3.5 sm:px-4 py-2 text-left transition-all duration-300 border ${
-                      isActive
-                        ? 'bg-graphite text-ivory border-graphite shadow-[0_10px_30px_-12px_rgba(21,23,26,0.7)]'
-                        : 'bg-ivory/55 backdrop-blur-sm border-ink/10 text-ink/55 hover:text-ink hover:border-ink/25'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <span
-                        className={`font-mono text-[9px] tracking-widest ${
-                          isActive ? 'text-champagne' : 'text-steel'
-                        }`}
-                      >
-                        {String(idx + 1).padStart(2, '0')}
-                      </span>
-                      <span className="font-sans text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.08em] whitespace-nowrap">
-                        {prod.name}
-                      </span>
-                    </span>
-                    {isActive && (
-                      <span className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-1 h-1 rotate-45 bg-copper" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+              ref={emberRef}
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  'radial-gradient(90% 70% at 50% 82%, rgba(199,166,106,0.28) 0%, rgba(199,166,106,0.1) 40%, transparent 72%), radial-gradient(60% 42% at 50% 96%, rgba(231,196,134,0.35) 0%, transparent 70%)',
+              }}
+            />
           </div>
-        </div>
 
-        {/* ---- Editorial product name plate (desktop, edge aligned) ---- */}
-        <div className="absolute z-20 left-8 xl:left-14 top-1/2 -translate-y-1/2 w-[26%] min-w-[300px] max-w-[380px] pointer-events-none hidden xl:block">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeProduct.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <ActiveIcon className="w-3.5 h-3.5 text-copper" strokeWidth={1.5} />
-                <span className="label-tech text-copper-deep">
-                  {activeProduct.category}
+          {/* Threshold caption — over the navy, burned away as light falls */}
+          <div
+            ref={captionRef}
+            className="absolute inset-x-0 top-[16vh] z-20 px-[6vw] pointer-events-none hidden md:block"
+          >
+            <div className="flex items-center gap-4 mb-5">
+              <span className="h-px w-12 bg-champagne/80" />
+              <span className="label-tech text-champagne">
+                Scene 03 — From Casting to Finished Fitting
+              </span>
+            </div>
+            <h2 className="display-tight text-ivory text-[clamp(2.2rem,5vw,4.6rem)]">
+              Light falls{' '}
+              <span className="font-display italic font-light text-champagne">on the object.</span>
+            </h2>
+          </div>
+
+          {/* The ivory portal — architectural showroom */}
+          <div
+            ref={portalRef}
+            className="relative md:absolute md:inset-0 z-10 bg-ivory will-transform"
+            style={{ clipPath: 'inset(40% 42% round 26px)' }}
+          >
+            {/* faint architectural photograph, seated under ivory */}
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-[0.16]"
+              style={{ backgroundImage: `url(${MOULDINGFLOOR})` }}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(244,241,234,0.9) 0%, rgba(244,241,234,0.4) 22%, rgba(244,241,234,0.15) 50%, rgba(231,228,220,0.55) 88%, rgba(201,196,184,0.7) 100%)',
+              }}
+            />
+            {/* survey grid — engineering catalogue underlay */}
+            <div
+              className="absolute inset-0 opacity-[0.35] pointer-events-none"
+              style={{
+                backgroundImage:
+                  'linear-gradient(rgba(10,32,53,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(10,32,53,0.05) 1px, transparent 1px)',
+                backgroundSize: '56px 56px',
+              }}
+            />
+
+            {/* ---------- STAGE ---------- */}
+            <div className="relative h-full flex flex-col">
+              {/* identity bar */}
+              <div className="flex items-center justify-between px-5 sm:px-8 lg:px-12 h-14 sm:h-16 border-b border-ink/10 shrink-0">
+                <div className="flex items-center gap-3">
+                  <DiamondMark size={6} />
+                  <span className="label-tech text-copper-deep">
+                    Scene 04 — Product Showroom
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 sm:gap-6">
+                  <span className="font-mono text-[10px] tracking-[0.2em] text-ink/50 tabular-nums hidden sm:block">
+                    {String(activeIndex + 1).padStart(2, '0')} / {String(ALL_PRODUCTS.length).padStart(2, '0')}
+                  </span>
+                  <a
+                    href="/assets/Varaha_Metaliks_Brochure.pdf"
+                    download="Varaha_Metaliks_Brochure.pdf"
+                    className="group inline-flex items-center gap-2 label-tech text-copper-deep hover:text-ink transition-colors"
+                  >
+                    <FileDown className="w-3.5 h-3.5" strokeWidth={1.6} />
+                    <span className="hidden sm:inline">Brochure</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* mobile identity */}
+              <div className="lg:hidden text-center pt-4 px-6 pointer-events-none">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeProduct.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <span className="label-tech text-copper-deep">{activeProduct.category}</span>
+                    <h2 className="font-display font-medium text-ink text-xl leading-tight mt-1">
+                      {toTitleCase(activeProduct.name)}
+                    </h2>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* main area */}
+              <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(280px,26%)_1fr_minmax(280px,24%)]">
+                {/* LEFT — product information */}
+                <div className="hidden lg:flex flex-col justify-center px-10 xl:px-14 border-r border-ink/10 min-h-0">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeProduct.id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <ActiveIcon className="w-3.5 h-3.5 text-copper-deep" strokeWidth={1.5} />
+                        <span className="label-tech text-copper-deep">{activeProduct.category}</span>
+                      </div>
+                      <h2 className="display-tight text-ink text-[clamp(1.8rem,2.4vw,2.6rem)]">
+                        {toTitleCase(activeProduct.name)}
+                      </h2>
+                      <span className="block h-px w-14 bg-copper mt-5 mb-6" />
+                      <dl className="space-y-4">
+                        <div>
+                          <dt className="label-tech text-ink/45 mb-1">Size Range</dt>
+                          <dd className="font-sans text-sm text-ink/80 font-medium">{activeProduct.size}</dd>
+                        </div>
+                        <div>
+                          <dt className="label-tech text-ink/45 mb-1">Pressure Class</dt>
+                          <dd className="font-sans text-sm text-copper-deep font-semibold">{activeProduct.pnRating}</dd>
+                        </div>
+                        <div>
+                          <dt className="label-tech text-ink/45 mb-1">Standard</dt>
+                          <dd className="font-sans text-sm text-ink/80 font-medium">{activeProduct.standard}</dd>
+                        </div>
+                      </dl>
+                      <div className="mt-8 flex items-center gap-5">
+                        <a
+                          href="#contact"
+                          className="group inline-flex items-center gap-2 rounded-full bg-navy hover:bg-steelnavy text-ivory px-5 py-2.5 label-tech transition-colors"
+                        >
+                          Inquire
+                          <ArrowRight className="w-3.5 h-3.5 text-champagne transition-transform group-hover:translate-x-0.5" strokeWidth={1.6} />
+                        </a>
+                        <button
+                          onClick={() => setIsSpecsOpen(true)}
+                          className="label-tech text-ink/55 hover:text-ink link-draw transition-colors"
+                        >
+                          Full Specification
+                        </button>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                {/* CENTER — the object */}
+                <div className="relative min-h-0 h-[52vh] md:h-[48vh] lg:h-auto">
+                  {activeProduct.is3D && activeProduct.modelUrl ? (
+                    <MercuryViewer
+                      modelUrl={activeProduct.modelUrl}
+                      productName={activeProduct.name}
+                      className="w-full h-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center px-6 pb-6">
+                      <div className="relative max-w-md w-full h-full max-h-[52vh] rounded-lg overflow-hidden bg-paper/70 backdrop-blur-sm border border-ink/10 shadow-[0_30px_60px_-30px_rgba(7,26,47,0.45)] flex items-center justify-center">
+                        <img
+                          src={activeProduct.imageUrl}
+                          alt={activeProduct.name}
+                          className="w-full h-full object-contain p-6"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute top-3 left-3 label-tech text-copper-deep bg-ivory/80 px-2 py-1 rounded-sm">
+                          {activeProduct.category}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* specifications trigger */}
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 flex justify-center w-full px-4 pointer-events-none z-30">
+                    {!isSpecsOpen && (
+                      <button
+                        onClick={() => setIsSpecsOpen(true)}
+                        className="pointer-events-auto group inline-flex items-center gap-2.5 rounded-full bg-ivory/90 backdrop-blur-md border border-ink/12 px-5 py-2.5 shadow-[0_14px_40px_-16px_rgba(7,26,47,0.5)] hover:border-copper/60 hover:bg-ivory transition-all duration-300"
+                        title="View Technical Specifications"
+                      >
+                        <SlidersHorizontal
+                          className="w-3.5 h-3.5 text-copper-deep transition-transform duration-500 group-hover:rotate-90"
+                          strokeWidth={1.6}
+                        />
+                        <span className="label-tech text-ink/75 group-hover:text-ink">
+                          Specifications
+                        </span>
+                        <ArrowDown className="w-3 h-3 text-ink/40 group-hover:text-copper-deep transition-colors" strokeWidth={1.6} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* RIGHT — product range index */}
+                <div className="hidden lg:block px-8 xl:px-10 py-6 border-l border-ink/10 min-h-0">
+                  <CatalogList
+                    activeIndex={activeIndex}
+                    onSelect={handleSwitchProduct}
+                    itemRefs={catalogItemRefs}
+                    className="h-full"
+                  />
+                </div>
+              </div>
+
+              {/* mobile product range — after the object, per mobile composition */}
+              <div className="lg:hidden border-t border-ink/10 px-5 h-[30vh] md:h-[26vh] overflow-hidden flex flex-col">
+                <CatalogList
+                  activeIndex={activeIndex}
+                  onSelect={handleSwitchProduct}
+                  itemRefs={mobileCatalogItemRefs}
+                  className="h-full"
+                />
+              </div>
+
+              {/* base bar */}
+              <div className="hidden md:flex items-center justify-between px-8 lg:px-12 h-10 border-t border-ink/10 shrink-0">
+                <span className="font-mono text-[9px] tracking-[0.24em] text-ink/40 uppercase">
+                  Ductile Iron · Sand-Cast Finish · IS 9523:2000
+                </span>
+                <span className="font-mono text-[9px] tracking-[0.24em] text-ink/40 uppercase">
+                  Varaha Metaliks — Showroom
                 </span>
               </div>
-              <h2 className="display-tight text-ink text-[clamp(1.7rem,2.7vw,2.7rem)]">
-                {toTitleCase(activeProduct.name)}
-              </h2>
-              <span className="block h-px w-14 bg-copper mt-5 mb-5" />
-              <dl>
-                <dt className="label-tech text-steel mb-1">Size Range</dt>
-                <dd className="font-sans text-sm text-ink/75 font-medium">
-                  {activeProduct.size}
-                </dd>
-              </dl>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* ---- Mobile name plate ---- */}
-        <div className="relative z-20 lg:hidden px-5 pt-3 text-center pointer-events-none">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeProduct.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <span className="label-tech text-copper-deep">
-                {activeProduct.category}
-              </span>
-              <h2 className="font-display font-medium text-ink text-lg leading-tight mt-0.5 normal-case">
-                {toTitleCase(activeProduct.name)}
-              </h2>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* ---- Main 3D viewport / image fallback ---- */}
-        <div className="relative z-10 flex-1 min-h-0 pb-12 sm:pb-10">
-          {activeProduct.is3D && activeProduct.modelUrl ? (
-            <MercuryViewer
-              modelUrl={activeProduct.modelUrl}
-              productName={activeProduct.name}
-              className="w-full h-full"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center px-6 pb-6">
-              <div className="relative max-w-md w-full h-[52vh] rounded-lg overflow-hidden bg-ivory/70 backdrop-blur-sm border border-ink/10 shadow-[0_30px_60px_-30px_rgba(21,23,26,0.45)] flex items-center justify-center">
-                <img
-                  src={activeProduct.imageUrl}
-                  alt={activeProduct.name}
-                  className="w-full h-full object-contain p-6"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute top-3 left-3 label-tech text-copper-deep bg-ivory/80 px-2 py-1 rounded-sm">
-                  {activeProduct.category}
-                </div>
-              </div>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* ---- Specifications trigger ---- */}
-        <div className="absolute z-40 left-1/2 -translate-x-1/2 bottom-14 sm:bottom-[4.25rem] flex justify-center w-full px-4 pointer-events-none">
-          {!isSpecsOpen && (
-            <button
-              onClick={() => setIsSpecsOpen(true)}
-              className="pointer-events-auto group inline-flex items-center gap-2.5 rounded-full bg-ivory/90 backdrop-blur-md border border-ink/12 px-5 py-2.5 shadow-[0_14px_40px_-16px_rgba(21,23,26,0.5)] hover:border-copper/60 hover:bg-ivory transition-all duration-300"
-              title="View Technical Specifications"
-            >
-              <SlidersHorizontal
-                className="w-3.5 h-3.5 text-copper transition-transform duration-500 group-hover:rotate-90"
-                strokeWidth={1.6}
-              />
-              <span className="label-tech text-ink/75 group-hover:text-ink">
-                Click to view specifications
-              </span>
-              <ArrowDown className="w-3 h-3 text-steel group-hover:text-copper transition-colors" strokeWidth={1.6} />
-            </button>
-          )}
-        </div>
-
-        {/* ---- Specification sheet ---- */}
-        <AnimatePresence>
-          {isSpecsOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 28 }}
-              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute z-50 inset-x-2 bottom-14 sm:inset-x-auto sm:left-auto sm:right-6 sm:top-24 sm:bottom-24 sm:w-[400px] max-h-[72vh] sm:max-h-none overflow-y-auto no-scrollbar rounded-2xl bg-paper/97 backdrop-blur-xl border border-ink/10 shadow-[0_40px_90px_-30px_rgba(21,23,26,0.6)] p-5 sm:p-6"
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between gap-4 pb-4 border-b border-ink/10">
-                <div>
-                  <span className="inline-block font-mono text-[9px] tracking-[0.24em] uppercase text-copper-deep bg-copper/8 px-2 py-1 rounded-sm mb-2">
-                    {activeProduct.category}
-                  </span>
-                  <h3 className="font-display font-medium text-ink text-xl leading-tight">
-                    {activeProduct.name}
-                  </h3>
+          {/* ---------- Specification sheet ---------- */}
+          <AnimatePresence>
+            {isSpecsOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 28 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 28 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="fixed md:absolute z-50 inset-x-2 bottom-3 md:inset-x-auto md:left-auto md:right-6 md:top-24 md:bottom-16 md:w-[400px] max-h-[76vh] md:max-h-none overflow-y-auto no-scrollbar rounded-2xl bg-paper/97 backdrop-blur-xl border border-ink/10 shadow-[0_40px_90px_-30px_rgba(7,26,47,0.6)] p-5 sm:p-6"
+              >
+                <div className="flex items-start justify-between gap-4 pb-4 border-b border-ink/10">
+                  <div>
+                    <span className="inline-block font-mono text-[9px] tracking-[0.24em] uppercase text-copper-deep bg-copper/10 px-2 py-1 rounded-sm mb-2">
+                      {activeProduct.category}
+                    </span>
+                    <h3 className="font-display font-medium text-ink text-xl leading-tight">
+                      {activeProduct.name}
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setIsSpecsOpen(false)}
+                    className="shrink-0 w-8 h-8 rounded-full border border-ink/12 text-ink/60 hover:text-ink hover:border-ink/30 flex items-center justify-center transition-colors"
+                    title="Close Specifications"
+                    aria-label="Close specifications"
+                  >
+                    <X className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setIsSpecsOpen(false)}
-                  className="shrink-0 w-8 h-8 rounded-full border border-ink/12 text-ink/60 hover:text-ink hover:border-ink/30 flex items-center justify-center transition-colors"
-                  title="Close Specifications"
-                  aria-label="Close specifications"
-                >
-                  <X className="w-4 h-4" strokeWidth={1.5} />
-                </button>
-              </div>
 
-              {/* Angle variants */}
-              {activeProduct.angles && activeProduct.angles.length > 0 && (
-                <div className="py-4 border-b border-ink/10">
-                  <span className="label-tech text-steel block mb-2">
-                    Deflection Angles:
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {activeProduct.angles.map((angle) => (
-                      <button
-                        key={angle}
-                        onClick={() => setSelectedAngle(angle)}
-                        className={`px-3 py-1.5 rounded-full font-mono text-[11px] font-medium border transition-all ${
-                          selectedAngle === angle
-                            ? 'bg-graphite text-ivory border-graphite'
-                            : 'bg-mineral text-ink/70 border-ink/8 hover:border-copper/50 hover:text-ink'
+                {activeProduct.angles && activeProduct.angles.length > 0 && (
+                  <div className="py-4 border-b border-ink/10">
+                    <span className="label-tech text-ink/45 block mb-2">Deflection Angles:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {activeProduct.angles.map((angle) => (
+                        <button
+                          key={angle}
+                          onClick={() => setSelectedAngle(angle)}
+                          className={`px-3 py-1.5 rounded-full font-mono text-[11px] font-medium border transition-all ${
+                            selectedAngle === angle
+                              ? 'bg-navy text-ivory border-navy'
+                              : 'bg-mineral text-ink/70 border-ink/8 hover:border-copper/50 hover:text-ink'
+                          }`}
+                        >
+                          {angle}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <dl className="py-3">
+                  {[
+                    { k: 'Size Range', v: activeProduct.size, accent: false },
+                    { k: 'Pressure Class', v: activeProduct.pnRating, accent: true },
+                    { k: 'Standard', v: activeProduct.standard, accent: false },
+                    { k: 'Metallurgy', v: activeProduct.materialGrade, accent: false },
+                    { k: 'Test Pressure', v: activeProduct.testPressure, accent: false },
+                    { k: 'Coating', v: activeProduct.coating, accent: false },
+                  ].map((row) => (
+                    <div
+                      key={row.k}
+                      className="flex items-start justify-between gap-5 py-3 border-b border-ink/[0.07]"
+                    >
+                      <dt className="label-tech text-ink/45 shrink-0 pt-0.5 w-[38%]">{row.k}</dt>
+                      <dd
+                        className={`text-right text-xs font-medium leading-relaxed ${
+                          row.accent ? 'text-copper-deep font-semibold' : 'text-ink/85'
                         }`}
                       >
-                        {angle}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                        {row.v}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
 
-              {/* Technical specification rows */}
-              <dl className="py-3">
-                {[
-                  { k: 'Size Range', v: activeProduct.size, accent: false },
-                  { k: 'Pressure Class', v: activeProduct.pnRating, accent: true },
-                  { k: 'Standard', v: activeProduct.standard, accent: false },
-                  { k: 'Metallurgy', v: activeProduct.materialGrade, accent: false },
-                  { k: 'Test Pressure', v: activeProduct.testPressure, accent: false },
-                  { k: 'Coating', v: activeProduct.coating, accent: false },
-                ].map((row) => (
-                  <div
-                    key={row.k}
-                    className="flex items-start justify-between gap-5 py-3 border-b border-ink/[0.07]"
+                <div className="pt-4 flex items-center justify-between">
+                  <a
+                    href="#contact"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-navy hover:bg-steelnavy text-ivory px-4 py-2 label-tech transition-colors"
                   >
-                    <dt className="label-tech text-steel shrink-0 pt-0.5 w-[38%]">
-                      {row.k}
-                    </dt>
-                    <dd
-                      className={`text-right text-xs font-medium leading-relaxed ${
-                        row.accent ? 'text-copper-deep font-semibold' : 'text-ink/85'
-                      }`}
-                    >
-                      {row.v}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-
-              {/* Footer actions */}
-              <div className="pt-4 flex items-center justify-between">
-                <a
-                  href="#contact"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-graphite hover:bg-graphite-2 text-ivory px-4 py-2 label-tech transition-colors"
-                >
-                  Inquire Now
-                  <ArrowRight className="w-3.5 h-3.5 text-champagne" strokeWidth={1.6} />
-                </a>
-                <button
-                  onClick={() => setIsSpecsOpen(false)}
-                  className="label-tech text-steel hover:text-ink transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ---- Brochure bar ---- */}
-        <a
-          href="/assets/Varaha_Metaliks_Brochure.pdf"
-          download="Varaha_Metaliks_Brochure.pdf"
-          className="group absolute left-0 right-0 bottom-0 z-40 h-11 sm:h-12 bg-graphite/96 backdrop-blur-md border-t border-champagne/18 flex items-center justify-center gap-2.5 hover:bg-graphite transition-colors"
-        >
-          <FileDown
-            className="w-4 h-4 text-champagne transition-transform duration-500 group-hover:translate-y-0.5"
-            strokeWidth={1.6}
-          />
-          <span className="label-tech text-ivory/85 group-hover:text-champagne transition-colors">
-            Download Our Corporate Brochure
-          </span>
-        </a>
+                    Inquire Now
+                    <ArrowRight className="w-3.5 h-3.5 text-champagne" strokeWidth={1.6} />
+                  </a>
+                  <button
+                    onClick={() => setIsSpecsOpen(false)}
+                    className="label-tech text-ink/45 hover:text-ink transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* ================================================================
-          CAPABILITIES — graphite sheet rising over the bright stage
+          CAPABILITIES — navy sheet under the showroom
           ================================================================ */}
-      <div
-        data-theme="dark"
-        className="relative z-10 bg-graphite text-ivory overflow-hidden"
-      >
-        {/* warm foundry atmosphere, extremely restrained */}
+      <div data-theme="dark" className="relative z-10 bg-navy text-ivory overflow-hidden">
         <div
           className="pointer-events-none absolute -top-40 right-[-10%] w-[60vw] h-[60vw] rounded-full opacity-[0.10]"
           style={{
-            background:
-              'radial-gradient(circle, rgba(216,181,109,0.55), transparent 62%)',
+            background: 'radial-gradient(circle, rgba(199,166,106,0.55), transparent 62%)',
           }}
         />
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-champagne/40 to-transparent" />
@@ -635,15 +749,14 @@ export default function Products() {
             </div>
           </div>
 
-          {/* Three pillars */}
           <StaggerGroup
             className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ivory/10 border border-ivory/10 rounded-2xl overflow-hidden mb-16 sm:mb-24"
           >
             {PILLARS.map((pillar, i) => (
-              <StaggerItem key={pillar.title} className="bg-graphite">
-                <div className="group h-full p-8 sm:p-10 transition-colors duration-500 hover:bg-graphite-2">
+              <StaggerItem key={pillar.title} className="bg-navy">
+                <div className="group h-full p-8 sm:p-10 transition-colors duration-500 hover:bg-navy-2">
                   <div className="flex items-start justify-between mb-10">
-                    <span className="w-10 h-10 rounded-full border border-copper/40 text-copper flex items-center justify-center">
+                    <span className="w-10 h-10 rounded-full border border-champagne/40 text-champagne flex items-center justify-center">
                       <pillar.icon className="w-4 h-4" strokeWidth={1.5} />
                     </span>
                     <span className="numeric-object text-ivory/15 text-4xl group-hover:text-champagne/30 transition-colors duration-500">
@@ -653,17 +766,14 @@ export default function Products() {
                   <h3 className="font-display font-medium text-ivory text-xl sm:text-[1.4rem] leading-snug mb-4">
                     {pillar.title}
                   </h3>
-                  <p className="text-ivory/50 text-[13px] leading-[1.85]">
-                    {pillar.body}
-                  </p>
+                  <p className="text-ivory/50 text-[13px] leading-[1.85]">{pillar.body}</p>
                 </div>
               </StaggerItem>
             ))}
           </StaggerGroup>
 
-          {/* Comprehensive categories */}
           <Reveal>
-            <div className="rounded-2xl border border-ivory/12 bg-graphite-2/60 p-7 sm:p-10">
+            <div className="rounded-2xl border border-ivory/12 bg-navy-2/60 p-7 sm:p-10">
               <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-7 pb-8 mb-8 border-b border-ivory/10">
                 <div className="max-w-xl">
                   <h3 className="font-display font-medium text-ivory text-2xl sm:text-3xl mb-3">
@@ -676,7 +786,7 @@ export default function Products() {
                 </div>
                 <a
                   href="#contact"
-                  className="group inline-flex items-center gap-2 self-start md:self-auto rounded-full bg-copper hover:bg-copper-deep text-ivory px-6 py-3 label-tech transition-colors"
+                  className="group inline-flex items-center gap-2 self-start md:self-auto rounded-full bg-champagne hover:bg-copper-deep text-navy hover:text-ivory px-6 py-3 label-tech transition-colors"
                 >
                   Request Quotation
                   <ArrowRight
@@ -690,7 +800,7 @@ export default function Products() {
                 {CATEGORIES.map((item) => (
                   <StaggerItem
                     key={item}
-                    className="bg-graphite group hover:bg-graphite-2 transition-colors duration-500"
+                    className="bg-navy group hover:bg-navy-2 transition-colors duration-500"
                   >
                     <div className="flex items-center gap-3 px-5 py-4">
                       <CheckCircle2
