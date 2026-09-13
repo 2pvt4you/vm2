@@ -459,7 +459,7 @@ export default function MercuryViewer({
         if (cancelled || activeUrlRef.current !== modelUrl) return;
 
         if (candidateIndex >= candidates.length) {
-          setLoadError(`Unable to load 3D model for ${productName}`);
+          setLoadError(`Unable to load product for ${productName}`);
           setLoading(false);
           return;
         }
@@ -587,7 +587,7 @@ export default function MercuryViewer({
             <span className="flex items-center gap-2 px-3 py-1">
               <Move3d className="h-3.5 w-3.5 shrink-0 text-vm-amber" />
               <span className="whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.18em] text-white/60">
-                {isTouch ? 'Drag to rotate' : 'Drag to rotate • Scroll to zoom'}
+                {isTouch ? 'Drag to explore' : 'Drag to explore • Scroll to zoom'}
               </span>
             </span>
 
@@ -626,7 +626,7 @@ export default function MercuryViewer({
             <div className="h-2 w-2 animate-ping rounded-full bg-vm-amber" />
           </div>
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/45">
-            Loading model
+            Preparing product
           </p>
         </div>
       )}

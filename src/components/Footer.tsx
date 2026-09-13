@@ -1,15 +1,12 @@
 export default function Footer() {
   return (
-    <footer className="bg-gray-950 text-gray-400 py-12 border-t border-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-        <h2 className="text-2xl font-black text-white tracking-tight mb-2">VARAHA METALIKS PVT. LTD</h2>
-        <p className="text-sm font-semibold tracking-widest text-blue-500 mb-8 uppercase">BIS Certified ISO 9001 Company</p>
-        
-        <div className="w-24 h-px bg-gray-800 mb-8"></div>
-        
-        <p className="text-sm">
-          &copy; {new Date().getFullYear()} Varaha Metaliks Pvt. Ltd. All rights reserved.
-        </p>
+    <footer className="bg-vm-blue px-5 py-10 text-white sm:px-8 lg:px-12">
+      <div className="mx-auto flex max-w-[1480px] flex-col justify-between gap-6 border-t border-white/20 pt-6 sm:flex-row sm:items-end">
+        <div>
+          <div className="font-display text-sm font-bold tracking-[0.18em]">VARAHA <span className="text-vm-gold">METALIKS</span></div>
+          <div className="mt-3 font-mono text-[9px] uppercase tracking-[0.18em] text-white/55">BIS CERTIFIED ISO 9001 COMPANY · IS 9523:2000 · CM/L NO 6300089907</div>
+        </div>
+        <div className="text-left font-mono text-[10px] uppercase tracking-[0.16em] text-white/45 sm:text-right">© {new Date().getFullYear()} Varaha Metaliks Pvt. Ltd.<br />All rights reserved.</div>
       </div>
     </footer>
   );

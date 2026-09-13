@@ -1,304 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-editorial: "Fraunces", ui-serif, Georgia, serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-
-  /* --- Unified industrial palette (shared across every section) --- */
-  --color-vm-ink: #061b57;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-vm-blue: #092b6d;
+  --color-vm-ink: #092b6d;
+  --color-vm-gold: #dfac35;
+  --color-vm-paper: #f8f6f0;
+  --color-vm-mist: #eef1f4;
   --color-vm-void: #05070c;
-  --color-vm-iron: #12161d;
-  --color-vm-graphite: #1d232c;
-  --color-vm-amber: #d4a548;
-  --color-vm-ember: #ff9d3c;
-  --color-vm-mist: #f4f6fa;
 }
 
-/* ==========================================================================
-   GLOBAL SCROLL + OVERFLOW SAFETY
-   Horizontal overflow is the single most common mobile failure on this kind
-   of cinematic layout, so it is locked down at the root.
-   ========================================================================== */
+:root { --app-vh: 100vh; }
+@supports (height: 100dvh) { :root { --app-vh: 100dvh; } }
 
-html {
-  scroll-behavior: smooth;
-  /* iOS Safari: stop the rubber-band from revealing white gutters */
-  overscroll-behavior-x: none;
+html { scroll-behavior: smooth; overscroll-behavior-x: none; }
+body { margin: 0; max-width: 100%; overflow-x: clip; background: #f8f6f0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+#root { max-width: 100vw; overflow-x: clip; }
+* { box-sizing: border-box; }
+::selection { background: #dfac35; color: #092b6d; }
+
+.section-shell { width: min(100% - 2.5rem, 1480px); margin-inline: auto; }
+.section-kicker { display: flex; align-items: center; gap: .75rem; color: #092b6d99; font-family: "DM Mono", monospace; font-size: 10px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; }
+.section-kicker::before { content: ""; width: 2.5rem; height: 1px; background: #dfac35; }
+.section-kicker-light { color: rgba(255,255,255,.62); }
+
+.hero-title { font-size: clamp(3.75rem, 10.6vw, 10.5rem); }
+.image-frame { position: relative; overflow: hidden; background: #dfe5ea; }
+.image-frame img { transition: transform 900ms cubic-bezier(.22,1,.36,1); }
+.image-frame:hover img { transform: scale(1.035); }
+
+.process-card { position: relative; overflow: hidden; background: #fff; }
+.process-card img { transition: transform 800ms cubic-bezier(.22,1,.36,1); }
+.process-card:hover img { transform: scale(1.035); }
+.process-card--dark { background: #092b6d; color: #fff; }
+
+.tap-target { min-height: 44px; min-width: 44px; }
+
+@media (min-width: 640px) {
+  .section-shell { width: min(100% - 4rem, 1480px); }
 }
-
-html,
-body {
-  max-width: 100%;
-  overflow-x: clip;
+@media (min-width: 1024px) {
+  .section-shell { width: min(100% - 6rem, 1480px); }
 }
-
-body {
-  /* Prevents iOS auto-inflating type in landscape */
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
-
-/* Anything absolutely positioned inside a cinematic stage must never be able
-   to push the document sideways. */
-#root {
-  max-width: 100vw;
-  overflow-x: clip;
-}
-
-/* ==========================================================================
-   DYNAMIC VIEWPORT HEIGHT (iOS Safari URL-bar behaviour)
-   --vh-unit is written by useViewportUnit(); the fallbacks keep the layout
-   correct before JS boots and on browsers without dvh.
-   ========================================================================== */
-
-:root {
-  --vh-unit: 1vh;
-  --app-vh: 100vh;
-}
-
-@supports (height: 100dvh) {
-  :root {
-    --app-vh: 100dvh;
-  }
-}
-
-.h-stage {
-  height: var(--app-vh);
-  /* Hard ceiling so a mid-scroll URL-bar resize can never create a gap */
-  max-height: var(--app-vh);
-}
-
-.min-h-stage {
-  min-height: var(--app-vh);
-}
-
-/* ==========================================================================
-   UTILITIES
-   ========================================================================== */
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.thin-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 165, 72, 0.55) transparent;
-}
-
-.thin-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-
-.thin-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.thin-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(212, 165, 72, 0.5);
-  border-radius: 999px;
-}
-
-/* Touch surfaces that scroll one axis only — stops a horizontal drag from
-   hijacking the vertical page scroll (and vice versa). */
-.pan-x-only {
-  touch-action: pan-x;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
-}
-
-.pan-y-only {
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-}
-
-/* Comfortable tap target — applied to every mobile control. */
-.tap-target {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-/* Hover effects must not stick on touch devices. Anything marked
-   `hover-only` simply does not animate where hover is not real. */
-@media (hover: none) {
-  .hover-only {
-    transition: none !important;
-  }
-}
-
-/* ==========================================================================
-   TWO-LANE CLIENT TICKER
-   Pure CSS transform loop — runs on the compositor, never touches layout,
-   and therefore cannot interfere with vertical page scrolling.
-   ========================================================================== */
-
-@keyframes vm-ticker-ltr {
-  from {
-    transform: translate3d(-50%, 0, 0);
-  }
-  to {
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@keyframes vm-ticker-rtl {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-.vm-lane {
-  display: flex;
-  width: max-content;
-  will-change: transform;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-
-.vm-lane-ltr {
-  animation-name: vm-ticker-ltr;
-}
-
-.vm-lane-rtl {
-  animation-name: vm-ticker-rtl;
-}
-
-.vm-lane-paused {
-  animation-play-state: paused;
-}
-
-/* ==========================================================================
-   CINEMATIC HELPERS
-   ========================================================================== */
-
-@keyframes vm-ken-burns {
-  from {
-    transform: scale(1.015) translate3d(0, 0, 0);
-  }
-  to {
-    transform: scale(1.09) translate3d(0, -1.2%, 0);
-  }
-}
-
-.vm-ken-burns {
-  animation: vm-ken-burns 7s ease-out forwards;
-}
-
-/* Shared grain used to blend section seams together. */
-.vm-grain::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-  mix-blend-mode: overlay;
-}
-
-/* ==========================================================================
-   CINEMATIC SCENE SYSTEM
-   Shared primitives so every scene speaks one motion/material language
-   instead of each section inventing its own treatment.
-   ========================================================================== */
-
-/* Localised readability scrim. Replaces the old full-frame white wash so the
-   factory plate stays fully visible and only the type area is lifted. */
-.vm-scrim-type {
-  background: radial-gradient(
-    112% 86% at 26% 26%,
-    rgba(244, 246, 250, 0.80) 0%,
-    rgba(244, 246, 250, 0.44) 34%,
-    rgba(244, 246, 250, 0.12) 58%,
-    rgba(244, 246, 250, 0) 74%
-  );
-}
-
-/* Type that sits INSIDE the plate: multiply lets the factory's own values
-   show through the letterforms instead of stacking a glowing layer on top. */
-.vm-type-in-scene {
-  mix-blend-mode: multiply;
-}
-
-@supports not (mix-blend-mode: multiply) {
-  .vm-type-in-scene {
-    mix-blend-mode: normal;
-  }
-}
-
-/* Hairline technical rule — used everywhere a card border used to be. */
-.vm-rule {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.18),
-    rgba(255, 255, 255, 0.02)
-  );
-}
-
-/* Contextual navigation glass. Never a white application slab. */
-.vm-nav-dark {
-  background: rgba(7, 10, 17, 0.56);
-  border-color: rgba(255, 255, 255, 0.09);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  backdrop-filter: blur(16px) saturate(140%);
-}
-
-.vm-nav-clear {
-  background: rgba(7, 10, 17, 0.26);
-  border-color: rgba(255, 255, 255, 0.13);
-  -webkit-backdrop-filter: blur(20px) saturate(125%);
-  backdrop-filter: blur(20px) saturate(125%);
-}
-
-/* Showroom pedestal light under the 3D product. */
-@keyframes vm-pedestal-breathe {
-  0%,
-  100% {
-    opacity: 0.46;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.68;
-    transform: scale(1.035);
-  }
-}
-
-.vm-pedestal {
-  animation: vm-pedestal-breathe 9s ease-in-out infinite;
-}
-
-/* ==========================================================================
-   REDUCED MOTION
-   Everything cinematic degrades to a static, readable composition.
-   ========================================================================== */
-
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  .vm-lane,
-  .vm-ken-burns {
-    animation: none !important;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
